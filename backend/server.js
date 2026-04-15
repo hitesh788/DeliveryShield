@@ -22,7 +22,7 @@ console.log("MONGO_URI:", process.env.MONGO_URI ? "FOUND ✅" : "MISSING ❌");
 // Routes
 const authRoutes = require('./routes/auth');
 const policyRoutes = require('./routes/policy');
-const claimRoutes = require('./routes/claim');
+const claimRoutes = require('./routes/claim.cjs');
 const adminRoutes = require('./routes/admin');
 
 app.use('/api/auth', authRoutes);
