@@ -1,13 +1,16 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-
-dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Debug logs
+console.log("🚀 Starting server...");
+console.log("MONGO_URI:", process.env.MONGO_URI ? "FOUND ✅" : "MISSING ❌");
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -24,9 +27,21 @@ app.get('/', (req, res) => res.send('DeliveryShield Backend is Running..'));
 
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => {
-        console.log('MongoDB Connected');
-        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-    })
-    .catch(err => console.log('Database connection error:', err));
+// Force server to start (IMPORTANT)
+app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+});
+
+// MongoDB connection (separate)
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => console.error('❌ DB ERROR:', err));
+
+// Catch hidden crashes
+process.on('uncaughtException', err => {
+    console.error('❌ UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', err => {
+    console.error('❌ UNHANDLED REJECTION:', err);
+});

@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
+    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+    isEmailVerified: { type: Boolean, default: false },
+    emailOtp: { type: String, default: null },
+    emailOtpExpires: { type: Date, default: null },
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['worker', 'admin'], default: 'worker' },

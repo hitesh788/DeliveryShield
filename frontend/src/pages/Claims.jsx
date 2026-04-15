@@ -7,94 +7,156 @@ import './Claims.css';
 const API_URL = 'http://localhost:5000/api';
 
 const Claims = () => {
-    const [claims, setClaims] = useState([]);
+const [claims, setClaims] = useState([]);
 
-    useEffect(() => {
-        const fetchClaims = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_URL}/claim`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setClaims(res.data);
-            } catch (err) {
-                toast.error("Failed to load claims history");
+const token = localStorage.getItem('token');
+
+// 🔹 Fetch Claims
+const fetchClaims = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/claim`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setClaims(res.data);
+    } catch {
+        toast.error("Failed to load claims history");
+    }
+};
+
+useEffect(() => {
+    fetchClaims();
+}, []);
+
+// 🔥 CLAIM FUNCTION (IMPORTANT)
+const handleClaim = async (type) => {
+    try {
+        const res = await axios.post(
+            `${API_URL}/claim/auto-trigger`,
+            { disruptionType: type },
+            {
+                headers: { Authorization: `Bearer ${token}` }
             }
-        };
+        );
+
+        toast.success(res.data.message);
+
+        // Refresh claims after success
         fetchClaims();
-    }, []);
 
-    return (
-        <div className="claims-container">
-            <div className="dashboard-header" style={{ marginBottom: '20px' }}>
-                <div className="welcome-text">
-                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><History color="var(--primary)" /> My Payout History</h2>
-                    <p>Review all automated claims triggers processed by the AI Risk Engine</p>
-                </div>
-            </div>
+    } catch (err) {
+        console.log("ERROR:", err.response?.data);
 
-            <div className="card">
-                {claims.length === 0 ? <p style={{ color: 'var(--text-light)', textAlign: 'center' }}>No claims history found.</p> : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="claims-table">
-                            <thead>
-                                <tr>
-                                    <th>Date Recorded</th>
-                                    <th>Trigger Event</th>
-                                    <th>Payout Amount</th>
-                                    <th>System Status</th>
-                                    <th>AI Fraud Check</th>
-                                    <th>Timeline</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {claims.map((claim) => (
-                                    <tr key={claim._id}>
-                                        <td>
-                                            <span style={{ fontWeight: 500, color: 'var(--text)' }}>
-                                                {new Date(claim.dateOfDisruption).toLocaleDateString()}
-                                            </span>
-                                        </td>
-                                        <td><span style={{ fontWeight: 'bold', color: 'var(--dark)' }}>{claim.disruptionType}</span></td>
-                                        <td><span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--primary)' }}>₹{claim.amountPayout}</span></td>
-                                        <td>
-                                            <span className={`badge ${claim.status}`}>{claim.status.toUpperCase()}</span>
-                                        </td>
-                                        <td>
-                                            {claim.isFraudulent ? (
-                                                <span className="text-danger" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <ShieldAlert size={14} /> FLAGGED / {claim.fraudScore}% FALSE
-                                                </span>
-                                            ) : (
-                                                <span className="text-success" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <ShieldCheck size={14} /> PASSED ({claim.fraudScore} risk)
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'grid', gap: '6px', minWidth: '260px' }}>
-                                                {(claim.timeline || []).map(step => (
-                                                    <span key={`${claim._id}-${step.label}`} className={`badge ${step.status}`}>
-                                                        {step.label}
-                                                    </span>
-                                                ))}
-                                                {claim.rejectionReason && <small className="text-danger">{claim.rejectionReason}</small>}
-                                                {claim.weatherSnapshot?.condition && (
-                                                    <small style={{ color: 'var(--text-light)' }}>
-                                                        {claim.weatherSnapshot.condition}, {claim.weatherSnapshot.temperature}C, AQI {claim.weatherSnapshot.aqi}
-                                                    </small>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+        const msg = err.response?.data?.message || "Claim failed";
+        const reason = err.response?.data?.reason || "";
+
+        toast.error(`${msg} - ${reason}`);
+    }
+};
+
+return (
+    <div className="claims-container">
+
+        {/* HEADER */}
+        <div className="dashboard-header" style={{ marginBottom: '20px' }}>
+            <div className="welcome-text">
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <History color="var(--primary)" /> Claims Dashboard
+                </h2>
+                <p>Trigger claims and view AI-processed payout history</p>
             </div>
         </div>
-    );
+
+        {/* 🔥 CLAIM BUTTONS */}
+        <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+            <button onClick={() => handleClaim("Heavy Rain")}>
+                🌧 Claim Rain
+            </button>
+
+            <button onClick={() => handleClaim("Extreme Heat")}>
+                🌡 Claim Heat
+            </button>
+
+            <button onClick={() => handleClaim("Pollution")}>
+                🌫 Claim Pollution
+            </button>
+        </div>
+
+        {/* CLAIM HISTORY */}
+        <div className="card">
+            {claims.length === 0 ? (
+                <p style={{ textAlign: 'center' }}>No claims history found.</p>
+            ) : (
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="claims-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Event</th>
+                                <th>Payout</th>
+                                <th>Status</th>
+                                <th>Fraud Check</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {claims.map((claim) => (
+                                <tr key={claim._id}>
+
+                                    <td>
+                                        {new Date(claim.dateOfDisruption).toLocaleDateString()}
+                                    </td>
+
+                                    <td>
+                                        <b>{claim.disruptionType}</b>
+                                    </td>
+
+                                    <td style={{ fontWeight: 'bold', color: 'green' }}>
+                                        ₹{claim.amountPayout}
+                                    </td>
+
+                                    <td>
+                                        <span className={`badge ${claim.status}`}>
+                                            {claim.status.toUpperCase()}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {claim.isFraudulent ? (
+                                            <span style={{ color: 'red' }}>
+                                                <ShieldAlert size={14} /> REJECTED ({claim.fraudScore}%)
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: 'green' }}>
+                                                <ShieldCheck size={14} /> OK ({claim.fraudScore})
+                                            </span>
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        {/* 🔥 SHOW REJECTION REASON */}
+                                        {claim.rejectionReason ? (
+                                            <span style={{ color: 'red', fontSize: '12px' }}>
+                                                {claim.rejectionReason}
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: 'gray' }}>
+                                                Claim processed successfully
+                                            </span>
+                                        )}
+                                    </td>
+
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+
+    </div>
+);
+
 };
 
 export default Claims;
