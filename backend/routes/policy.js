@@ -3,7 +3,7 @@ const auth = require('../middleware/auth');
 const Policy = require('../models/Policy');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
-const { calculateWeeklyPremium } = require('../ai-module/riskAssessment');
+const { calculateWeeklyPremium, explainRisk, recommendPlan, getPredictiveAlerts } = require('../ai-module/riskAssessment');
 
 const router = express.Router();
 
@@ -13,12 +13,62 @@ const PLAN_PRICES = {
     'ELITE CORP': 150
 };
 
+const PLAN_DETAILS = {
+    'BASIC PLAN': {
+        price: 0,
+        coverageBoost: 1,
+        claimLimit: 1,
+        payoutSpeed: 'Standard',
+        coveredDisruptions: ['Heavy Rain', 'Extreme Heat']
+    },
+    'BETA PLAN': {
+        price: 45,
+        coverageBoost: 1.1,
+        claimLimit: 2,
+        payoutSpeed: 'Standard',
+        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution']
+    },
+    'PRO LEVEL': {
+        price: 95,
+        coverageBoost: 1.25,
+        claimLimit: 4,
+        payoutSpeed: 'Priority',
+        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution', 'Curfew']
+    },
+    'ELITE CORP': {
+        price: 150,
+        coverageBoost: 1.5,
+        claimLimit: 10,
+        payoutSpeed: 'Instant',
+        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution', 'Curfew']
+    }
+};
+
 // Get premium quote
 router.get('/quote', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         const quote = calculateWeeklyPremium(user.averageWeeklyIncome, user.city);
-        res.json(quote);
+        res.json({
+            ...quote,
+            explanation: explainRisk(user.averageWeeklyIncome, user.city),
+            recommendedPlan: recommendPlan(user.averageWeeklyIncome, user.city),
+            predictiveAlerts: getPredictiveAlerts(user.city),
+            plans: PLAN_DETAILS
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/plans', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        res.json({
+            currentPlan: user.currentPlan,
+            recommendedPlan: recommendPlan(user.averageWeeklyIncome, user.city),
+            plans: PLAN_DETAILS
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -27,8 +77,21 @@ router.get('/quote', auth, async (req, res) => {
 // Buy Policy
 router.post('/buy', auth, async (req, res) => {
     try {
+        const { paymentMethod = 'razorpay' } = req.body;
         const user = await User.findById(req.user.id);
         const quote = calculateWeeklyPremium(user.averageWeeklyIncome, user.city);
+
+        if (!['wallet', 'razorpay'].includes(paymentMethod)) {
+            return res.status(400).json({ error: 'Invalid payment method' });
+        }
+
+        if (paymentMethod === 'wallet') {
+            if (user.walletBalance < quote.weeklyPremium) {
+                return res.status(400).json({ error: 'Insufficient wallet balance' });
+            }
+            user.walletBalance -= quote.weeklyPremium;
+            await user.save();
+        }
 
         // Deactivate previous active policies
         await Policy.updateMany({ user: user._id, status: 'active' }, { status: 'cancelled' });
@@ -41,8 +104,11 @@ router.post('/buy', auth, async (req, res) => {
             user: user._id,
             startDate,
             endDate,
+            planName: user.currentPlan,
             weeklyPremium: quote.weeklyPremium,
             incomeCovered: quote.incomeCovered,
+            autoRenew: user.autoRenew,
+            coveredDisruptions: PLAN_DETAILS[user.currentPlan]?.coveredDisruptions || PLAN_DETAILS['BASIC PLAN'].coveredDisruptions,
             riskFactor: quote.riskFactor
         });
 
@@ -53,7 +119,10 @@ router.post('/buy', auth, async (req, res) => {
             user: user._id,
             type: 'premium_payment',
             amount: quote.weeklyPremium,
-            paymentMethod: 'razorpay',
+            paymentMethod,
+            planName: user.currentPlan,
+            balanceAfter: user.walletBalance,
+            description: `${user.currentPlan} weekly policy premium`,
             status: 'success'
         });
         await tx.save();
@@ -91,12 +160,25 @@ router.post('/change-plan', auth, async (req, res) => {
         user.currentPlan = planName;
         await user.save();
 
+        await Policy.updateMany(
+            { user: user._id, status: 'active' },
+            {
+                planName,
+                weeklyPremium: amount,
+                incomeCovered: Math.round(user.averageWeeklyIncome * 0.8 * PLAN_DETAILS[planName].coverageBoost),
+                coveredDisruptions: PLAN_DETAILS[planName].coveredDisruptions,
+                autoRenew: user.autoRenew
+            }
+        );
+
         const tx = new Transaction({
             user: user._id,
             type: 'plan_upgrade',
             amount,
             paymentMethod,
             planName,
+            balanceAfter: user.walletBalance,
+            description: `${planName} plan payment via ${paymentMethod}`,
             status: 'success'
         });
         await tx.save();
@@ -109,6 +191,22 @@ router.post('/change-plan', auth, async (req, res) => {
             walletBalance: user.walletBalance,
             transaction: tx
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/auto-renew', auth, async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.autoRenew = Boolean(enabled);
+        await user.save();
+        await Policy.updateMany({ user: user._id, status: 'active' }, { autoRenew: user.autoRenew });
+
+        res.json({ message: user.autoRenew ? 'Auto-renewal enabled' : 'Auto-renewal disabled', autoRenew: user.autoRenew });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

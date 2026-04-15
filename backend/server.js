@@ -13,10 +13,12 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 const policyRoutes = require('./routes/policy');
 const claimRoutes = require('./routes/claim');
+const adminRoutes = require('./routes/admin');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/policy', policyRoutes);
 app.use('/api/claim', claimRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => res.send('DeliveryShield Backend is Running..'));
 

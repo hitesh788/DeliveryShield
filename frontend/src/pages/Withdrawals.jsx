@@ -8,32 +8,36 @@ const API_URL = 'http://localhost:5000/api';
 
 const Withdrawals = () => {
     const [withdrawals, setWithdrawals] = useState([]);
+    const [filter, setFilter] = useState('all');
 
     const formatType = (tx) => {
         if (tx.type === 'plan_upgrade') return `PLAN CHANGE - ${tx.planName || 'PLAN'}`;
         if (tx.type === 'premium_payment') return 'POLICY PREMIUM';
+        if (tx.type === 'wallet_topup') return 'WALLET TOP-UP';
+        if (tx.type === 'claim_payout') return 'CLAIM PAYOUT';
         return tx.type.replace('_', ' ').toUpperCase();
     };
 
     const formatAmount = (tx) => {
-        const isDebit = tx.type === 'wallet_withdrawal' || tx.paymentMethod === 'wallet';
+        const isDebit = tx.type === 'wallet_withdrawal' || (tx.type === 'plan_upgrade' && tx.paymentMethod === 'wallet');
         return `${isDebit ? '-' : ''}₹${tx.amount}`;
     };
 
+    const fetchWithdrawals = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/auth/transactions?type=${filter}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setWithdrawals(res.data);
+        } catch (err) {
+            toast.error("Failed to load payment history");
+        }
+    };
+
     useEffect(() => {
-        const fetchWithdrawals = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_URL}/auth/withdrawals`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setWithdrawals(res.data);
-            } catch (err) {
-                toast.error("Failed to load withdrawal history");
-            }
-        };
         fetchWithdrawals();
-    }, []);
+    }, [filter]);
 
     return (
         <div className="claims-container">
@@ -42,6 +46,14 @@ const Withdrawals = () => {
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Banknote color="#10B981" /> Payout & Payment History</h2>
                     <p>Review wallet withdrawals, policy payments, and plan changes</p>
                 </div>
+                <select className="modal-input" style={{ width: '260px', margin: 0, textAlign: 'left' }} value={filter} onChange={e => setFilter(e.target.value)}>
+                    <option value="all">All transactions</option>
+                    <option value="claim_payout">Claim payouts</option>
+                    <option value="wallet_topup">Wallet top-ups</option>
+                    <option value="wallet_withdrawal">Wallet withdrawals</option>
+                    <option value="plan_upgrade">Plan payments</option>
+                    <option value="premium_payment">Policy premiums</option>
+                </select>
             </div>
 
             <div className="card">
@@ -53,6 +65,7 @@ const Withdrawals = () => {
                                     <th>Timestamp</th>
                                     <th>Transaction Type</th>
                                     <th>Amount</th>
+                                    <th>Balance After</th>
                                     <th>Payment / Destination</th>
                                     <th>Status</th>
                                 </tr>
@@ -81,7 +94,12 @@ const Withdrawals = () => {
                                         </td>
                                         <td>
                                             <span style={{ fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <CreditCard size={16} /> {tx.upiId || tx.paymentMethod?.toUpperCase() || 'N/A'}
+                                                ₹{tx.balanceAfter ?? 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span style={{ fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <CreditCard size={16} /> {tx.upiId || tx.paymentMethod?.toUpperCase() || tx.description || 'N/A'}
                                             </span>
                                         </td>
                                         <td>

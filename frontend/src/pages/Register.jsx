@@ -27,9 +27,16 @@ const Register = () => {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <h2>Register Worker</h2>
+        <div className="auth-container auth-page">
+            <div className="auth-split auth-split-register">
+                <div className="auth-visual-panel">
+                    <span className="auth-kicker">Start Protected</span>
+                    <h1>Build your safety net before the next disruption.</h1>
+                    <p>Create your worker profile so DeliveryShield can estimate risk, activate coverage, and route approved payouts to your wallet.</p>
+                </div>
+                <div className="auth-form-panel">
+                    <h2>Register Worker</h2>
+                    <p className="auth-subtitle">Tell us the basics to create your protection profile.</p>
                 <form onSubmit={handleRegister}>
                     <input type="text" name="name" placeholder="Full Name" onChange={handleChange} required />
                     <input type="text" name="phone" placeholder="Phone Number" onChange={handleChange} required />
@@ -49,7 +56,8 @@ const Register = () => {
                     <input type="number" name="averageWeeklyIncome" placeholder="Avg Weekly Income" onChange={handleChange} required />
                     <button type="submit" className="btn btn-primary">Register</button>
                 </form>
-                <p>Already have an account? <Link to="/login">Login</Link></p>
+                    <p>Already have an account? <Link to="/login">Login</Link></p>
+                </div>
             </div>
         </div>
     );

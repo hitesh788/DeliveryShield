@@ -25,3 +25,35 @@ exports.calculateWeeklyPremium = (averageWeeklyIncome, city) => {
         riskFactor
     };
 };
+
+exports.explainRisk = (averageWeeklyIncome, city) => {
+    const cityNotes = {
+        Mumbai: ['High rainfall probability', 'Waterlogging disruption risk'],
+        Delhi: ['High pollution exposure', 'Heatwave probability'],
+        Bangalore: ['Rain and traffic disruption risk', 'Moderate income volatility'],
+        Chennai: ['Heat and rain disruption risk', 'Coastal weather exposure']
+    };
+
+    const notes = cityNotes[city] || ['Standard city risk profile'];
+    if (averageWeeklyIncome >= 6000) notes.push('Higher income protection requirement');
+    if (averageWeeklyIncome < 3000) notes.push('Low premium band selected for affordability');
+    return notes;
+};
+
+exports.recommendPlan = (averageWeeklyIncome, city) => {
+    if (averageWeeklyIncome >= 7000) return 'ELITE CORP';
+    if (city === 'Delhi' || city === 'Mumbai') return 'PRO LEVEL';
+    if (averageWeeklyIncome >= 4000) return 'PRO LEVEL';
+    return 'BETA PLAN';
+};
+
+exports.getPredictiveAlerts = (city) => {
+    const alerts = {
+        Mumbai: ['Heavy rain risk may rise this week', 'Keep rain disruption coverage active'],
+        Delhi: ['AQI may cross unsafe levels', 'Heat risk can increase during afternoon shifts'],
+        Bangalore: ['Evening rain may affect delivery windows', 'Traffic gridlock risk is moderate'],
+        Chennai: ['Heat exposure risk is elevated', 'Coastal rain can trigger short delivery outages']
+    };
+
+    return alerts[city] || ['No major city-specific alert right now'];
+};

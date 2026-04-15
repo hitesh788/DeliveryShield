@@ -85,6 +85,13 @@ router.post('/auto-trigger', auth, async (req, res) => {
         }
 
         const amountPayout = Math.round(policy.incomeCovered / 7);
+        const approvedFraudScore = Math.floor(Math.random() * 15);
+        const weatherSnapshot = { temperature: temp, condition, aqi, lat, lon };
+        const baseTimeline = [
+            { label: 'Trigger received', detail: `${disruptionType} claim started`, status: 'success' },
+            { label: 'Live data checked', detail: `${condition}, ${temp}C, AQI ${aqi}`, status: 'success' },
+            { label: 'Fraud score calculated', detail: `Fraud score ${isFraudulent ? fraudScore : approvedFraudScore}`, status: isFraudulent ? 'failed' : 'success' }
+        ];
 
         // 4. Save and Process Result
         if (isFraudulent) {
@@ -96,7 +103,13 @@ router.post('/auto-trigger', auth, async (req, res) => {
                 amountPayout: 0,
                 status: 'rejected',
                 fraudScore,
-                isFraudulent: true
+                isFraudulent: true,
+                rejectionReason: rejectReason,
+                weatherSnapshot,
+                timeline: [
+                    ...baseTimeline,
+                    { label: 'Claim rejected', detail: rejectReason, status: 'failed' }
+                ]
             });
             await rejectedClaim.save();
             return res.status(400).json({ message: 'FALSE CLAIM FLAGGED: ' + rejectReason });
@@ -110,8 +123,14 @@ router.post('/auto-trigger', auth, async (req, res) => {
             dateOfDisruption: new Date(),
             amountPayout,
             status: 'auto-approved',
-            fraudScore: Math.floor(Math.random() * 15), // Basic low risk score since weather verified
-            isFraudulent: false
+            fraudScore: approvedFraudScore, // Basic low risk score since weather verified
+            isFraudulent: false,
+            weatherSnapshot,
+            timeline: [
+                ...baseTimeline,
+                { label: 'Claim approved', detail: `Payout Rs.${amountPayout} approved`, status: 'success' },
+                { label: 'Wallet credited', detail: `Rs.${amountPayout} added to wallet`, status: 'success' }
+            ]
         });
         await claim.save();
 
@@ -119,6 +138,8 @@ router.post('/auto-trigger', auth, async (req, res) => {
             user: user._id,
             type: 'claim_payout',
             amount: amountPayout,
+            balanceAfter: user.walletBalance + amountPayout,
+            description: `${disruptionType} claim payout`,
             status: 'success'
         });
         await tx.save();

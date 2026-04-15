@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './BuyPolicy.css';
+import './Claims.css';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -24,16 +25,16 @@ const BuyPolicy = () => {
         fetchQuote();
     }, []);
 
-    const handleBuy = async () => {
+    const handleBuy = async (paymentMethod) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/policy/buy`, {}, {
+            await axios.post(`${API_URL}/policy/buy`, { paymentMethod }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert('Policy Purchased Successfully! Payment simulated via Razorpay test mode.');
+            alert(`Policy Purchased Successfully! Paid via ${paymentMethod === 'wallet' ? 'wallet' : 'Razorpay test mode'}.`);
             navigate('/dashboard');
         } catch (err) {
-            alert('Purchase failed');
+            alert(err.response?.data?.error || 'Purchase failed');
         }
     };
 
@@ -50,7 +51,15 @@ const BuyPolicy = () => {
                         <li>✅ Fully Automated Zero-Touch Claims</li>
                     </ul>
                     <p className="risk-text">AI Risk Multiplier: {quote.riskFactor}x (Based on your location)</p>
-                    <button onClick={handleBuy} className="btn btn-success btn-large">Pay with Razorpay (Simulated)</button>
+                    {quote.explanation && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '15px' }}>
+                            {quote.explanation.map(item => <span key={item} className="badge pending">{item}</span>)}
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button onClick={() => handleBuy('wallet')} className="btn btn-dark btn-large">Pay from Wallet</button>
+                        <button onClick={() => handleBuy('razorpay')} className="btn btn-success btn-large">Pay with Razorpay (Simulated)</button>
+                    </div>
                 </div>
             ) : (
                 <p>Loading AI quote...</p>

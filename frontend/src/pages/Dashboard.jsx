@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote } from 'lucide-react';
+import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote, Info, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
+import './Claims.css';
 
 const API_URL = 'http://localhost:5000/api';
 const PLAN_PRICES = {
@@ -16,20 +17,26 @@ const Dashboard = () => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
     const [showPayoutModal, setShowPayoutModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showTopUpModal, setShowTopUpModal] = useState(false);
+    const [showPolicyModal, setShowPolicyModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [currentPlan, setCurrentPlan] = useState(localStorage.getItem('userPlan') || 'BASIC PLAN');
+    const [quote, setQuote] = useState(null);
     const [upiId, setUpiId] = useState('');
     const [payoutAmount, setPayoutAmount] = useState('');
+    const [topUpAmount, setTopUpAmount] = useState('');
 
     useEffect(() => {
         fetchPolicy();
+        fetchQuote();
         refreshUserData();
     }, []);
 
+    const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
+
     const refreshUserData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+            const res = await axios.get(`${API_URL}/auth/me`, { headers: authHeaders() });
             setUser(res.data);
             localStorage.setItem('user', JSON.stringify(res.data));
             if (res.data.currentPlan) {
@@ -44,13 +51,21 @@ const Dashboard = () => {
 
     const fetchPolicy = async () => {
         try {
-            const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/policy/active`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: authHeaders()
             });
             setPolicy(res.data);
         } catch (err) {
             console.log('Error fetching policy', err);
+        }
+    };
+
+    const fetchQuote = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/policy/quote`, { headers: authHeaders() });
+            setQuote(res.data);
+        } catch (err) {
+            console.log('Error fetching quote', err);
         }
     };
 
@@ -71,9 +86,8 @@ const Dashboard = () => {
                 }
             }
 
-            const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/claim/auto-trigger`, { disruptionType: type, lat, lon }, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: authHeaders()
             });
             toast.update(toastId, { render: res.data.message, type: "success", isLoading: false, autoClose: 5000 });
             refreshUserData();
@@ -84,7 +98,6 @@ const Dashboard = () => {
 
     const handleWithdraw = async () => {
         try {
-            const token = localStorage.getItem('token');
             const payout = parseFloat(payoutAmount);
 
             if (!upiId.includes('@')) {
@@ -98,7 +111,7 @@ const Dashboard = () => {
             }
 
             const res = await axios.post(`${API_URL}/auth/withdraw`, { upiId, amount: payout }, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: authHeaders()
             });
 
             toast.info(`RazorpayX Transfer Successful: ₹${res.data.amount} sent to ${res.data.upiId}`);
@@ -110,6 +123,39 @@ const Dashboard = () => {
         }
     }
 
+    const handleTopUp = async () => {
+        try {
+            const amount = Number(topUpAmount);
+            if (!amount || amount <= 0) {
+                toast.warning('Enter a valid top-up amount');
+                return;
+            }
+
+            const res = await axios.post(`${API_URL}/auth/wallet/topup`, { amount }, { headers: authHeaders() });
+            const updatedUser = { ...user, walletBalance: res.data.walletBalance };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            toast.success(res.data.message);
+            setShowTopUpModal(false);
+            setTopUpAmount('');
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Wallet top-up failed');
+        }
+    };
+
+    const toggleAutoRenew = async () => {
+        try {
+            const res = await axios.post(`${API_URL}/policy/auto-renew`, { enabled: !user?.autoRenew }, { headers: authHeaders() });
+            const updatedUser = { ...user, autoRenew: res.data.autoRenew };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            toast.success(res.data.message);
+            fetchPolicy();
+        } catch (err) {
+            toast.error('Auto-renew update failed');
+        }
+    };
+
     const handleUpgrade = (planName) => {
         if (currentPlan === planName) return;
         setSelectedPlan(planName);
@@ -119,12 +165,11 @@ const Dashboard = () => {
         if (!selectedPlan) return;
 
         try {
-            const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/policy/change-plan`, {
                 planName: selectedPlan,
                 paymentMethod
             }, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: authHeaders()
             });
 
             const updatedUser = {
@@ -142,6 +187,7 @@ const Dashboard = () => {
             toast.success(res.data.message);
             setSelectedPlan(null);
             setShowUpgradeModal(false);
+            fetchPolicy();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Plan change failed');
         }
@@ -155,6 +201,17 @@ const Dashboard = () => {
                     <p>Monitor your active coverage and wallet payouts</p>
                 </div>
             </div>
+
+            {quote && (
+                <div className="card" style={{ marginBottom: '20px', padding: '18px' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}><Info size={18} /> Smart Protection Insights</h3>
+                    <p style={{ color: 'var(--text-light)', marginBottom: '10px' }}>Recommended plan: <strong>{quote.recommendedPlan}</strong></p>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {quote.explanation?.map(item => <span key={item} className="badge pending">{item}</span>)}
+                        {quote.predictiveAlerts?.map(item => <span key={item} className="badge active">{item}</span>)}
+                    </div>
+                </div>
+            )}
 
             <div className="overview-cards">
                 <div className="stat-card wallet">
@@ -170,6 +227,13 @@ const Dashboard = () => {
                             }}
                         >
                             <Banknote size={16} /> Withdraw Funds
+                        </button>
+                        <button
+                            className="btn btn-success"
+                            style={{ background: 'rgba(255,255,255,0.25)', width: '100%', marginTop: '10px' }}
+                            onClick={() => setShowTopUpModal(true)}
+                        >
+                            Add Money
                         </button>
                     </div>
                 </div>
@@ -201,13 +265,15 @@ const Dashboard = () => {
                             </>
                         ) : <span className="badge rejected">NO POLICY</span>}
                     </div>
-                    <div className="stat-action" style={{ display: 'flex', gap: '10px' }}>
+                    <div className="stat-action" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         {!policy && <Link to="/buy-policy" className="btn btn-primary" style={{ flex: 1 }}>Buy Policy</Link>}
                         {policy && (
                             <button onClick={() => setShowUpgradeModal(true)} className="btn btn-warning" style={{ flex: 1, boxShadow: '0 4px 6px -1px rgba(245, 158, 11, 0.4)' }}>
                                 Upgrade Plan 🚀
                             </button>
                         )}
+                        {policy && <button onClick={() => setShowPolicyModal(true)} className="btn btn-primary" style={{ flex: 1 }}><Info size={16} /> Details</button>}
+                        {policy && <button onClick={toggleAutoRenew} className="btn btn-dark" style={{ flex: 1 }}><RefreshCw size={16} /> {user?.autoRenew ? 'Auto Renew On' : 'Auto Renew Off'}</button>}
                     </div>
                 </div>
             </div>
@@ -231,6 +297,43 @@ const Dashboard = () => {
                     </button>
                 </div>
             </div>
+
+            {showTopUpModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="modal-title">Wallet Top-Up</h3>
+                        <p style={{ color: 'var(--text-light)', marginBottom: '15px' }}>Add money using simulated Razorpay checkout</p>
+                        <input
+                            type="number"
+                            value={topUpAmount}
+                            onChange={e => setTopUpAmount(e.target.value)}
+                            className="modal-input"
+                            placeholder="Amount"
+                        />
+                        <div className="modal-actions">
+                            <button className="btn btn-logout" onClick={() => setShowTopUpModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={handleTopUp}>Pay with Razorpay</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showPolicyModal && policy && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '600px', textAlign: 'left' }}>
+                        <h3 className="modal-title">Active Policy Details</h3>
+                        <p><strong>Plan:</strong> {policy.planName || currentPlan}</p>
+                        <p><strong>Start:</strong> {new Date(policy.startDate).toLocaleDateString()}</p>
+                        <p><strong>End:</strong> {new Date(policy.endDate).toLocaleDateString()}</p>
+                        <p><strong>Weekly premium:</strong> ₹{policy.weeklyPremium}</p>
+                        <p><strong>Income covered:</strong> ₹{policy.incomeCovered}</p>
+                        <p><strong>Risk factor:</strong> {policy.riskFactor}x</p>
+                        <p><strong>Auto-renew:</strong> {policy.autoRenew ? 'Enabled' : 'Disabled'}</p>
+                        <p><strong>Covered disruptions:</strong> {(policy.coveredDisruptions || []).join(', ') || 'Standard coverage'}</p>
+                        <button className="btn btn-logout" style={{ marginTop: '20px' }} onClick={() => setShowPolicyModal(false)}>Close</button>
+                    </div>
+                </div>
+            )}
 
             {showPayoutModal && (
                 <div className="modal-overlay">
@@ -316,6 +419,30 @@ const Dashboard = () => {
                                 <button className={currentPlan === 'ELITE CORP' ? "btn btn-logout" : "btn btn-success"} style={{ width: '100%' }} onClick={() => handleUpgrade('ELITE CORP')}>{currentPlan === 'ELITE CORP' ? 'Current Plan' : 'Subscribe to Elite'}</button>
                             </div>
                         </div>
+
+                        {quote?.plans && (
+                            <div className="card" style={{ padding: '18px', marginBottom: '20px', textAlign: 'left' }}>
+                                <h4 style={{ marginBottom: '10px' }}>Plan Comparison</h4>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table className="claims-table" style={{ marginTop: 0 }}>
+                                        <thead>
+                                            <tr><th>Plan</th><th>Price</th><th>Payout Speed</th><th>Claim Limit</th><th>Coverage</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            {Object.entries(quote.plans).map(([name, plan]) => (
+                                                <tr key={name}>
+                                                    <td>{name} {quote.recommendedPlan === name && <span className="badge active">Recommended</span>}</td>
+                                                    <td>₹{plan.price}/week</td>
+                                                    <td>{plan.payoutSpeed}</td>
+                                                    <td>{plan.claimLimit}/week</td>
+                                                    <td>{plan.coveredDisruptions.join(', ')}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                         {selectedPlan && (
                             <div className="card" style={{ marginBottom: '20px', padding: '20px', textAlign: 'left', border: '2px solid var(--primary)' }}>

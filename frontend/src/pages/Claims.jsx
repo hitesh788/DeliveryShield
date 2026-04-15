@@ -44,6 +44,7 @@ const Claims = () => {
                                     <th>Payout Amount</th>
                                     <th>System Status</th>
                                     <th>AI Fraud Check</th>
+                                    <th>Timeline</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -69,6 +70,21 @@ const Claims = () => {
                                                     <ShieldCheck size={14} /> PASSED ({claim.fraudScore} risk)
                                                 </span>
                                             )}
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'grid', gap: '6px', minWidth: '260px' }}>
+                                                {(claim.timeline || []).map(step => (
+                                                    <span key={`${claim._id}-${step.label}`} className={`badge ${step.status}`}>
+                                                        {step.label}
+                                                    </span>
+                                                ))}
+                                                {claim.rejectionReason && <small className="text-danger">{claim.rejectionReason}</small>}
+                                                {claim.weatherSnapshot?.condition && (
+                                                    <small style={{ color: 'var(--text-light)' }}>
+                                                        {claim.weatherSnapshot.condition}, {claim.weatherSnapshot.temperature}C, AQI {claim.weatherSnapshot.aqi}
+                                                    </small>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
