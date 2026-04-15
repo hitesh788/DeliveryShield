@@ -33,7 +33,7 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
         const token = jwt.sign({ id: user._id, role: user.role, city: user.city }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user._id, name: user.name, role: user.role, city: user.city, averageWeeklyIncome: user.averageWeeklyIncome, walletBalance: user.walletBalance } });
+        res.json({ token, user: { id: user._id, name: user.name, role: user.role, city: user.city, averageWeeklyIncome: user.averageWeeklyIncome, walletBalance: user.walletBalance, currentPlan: user.currentPlan } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -44,7 +44,7 @@ router.get('/me', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ error: "User not found" });
-        res.json({ id: user._id, name: user.name, role: user.role, city: user.city, averageWeeklyIncome: user.averageWeeklyIncome, walletBalance: user.walletBalance });
+        res.json({ id: user._id, name: user.name, role: user.role, city: user.city, averageWeeklyIncome: user.averageWeeklyIncome, walletBalance: user.walletBalance, currentPlan: user.currentPlan });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -83,7 +83,10 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
 
 router.get('/withdrawals', authMiddleware, async (req, res) => {
     try {
-        const history = await Transaction.find({ user: req.user.id, type: 'wallet_withdrawal' }).sort({ createdAt: -1 });
+        const history = await Transaction.find({
+            user: req.user.id,
+            type: { $in: ['wallet_withdrawal', 'plan_upgrade', 'premium_payment'] }
+        }).sort({ createdAt: -1 });
         res.json(history);
     } catch (err) {
         res.status(500).json({ error: err.message });

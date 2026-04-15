@@ -8,15 +8,19 @@ const Navbar = () => {
     const token = localStorage.getItem('token');
     const [location, setLocation] = useState('Detecting Location...');
     const [digitalHealth, setDigitalHealth] = useState({ label: 'Excellent', color: '#10B981' });
+    const [storedPlan, setStoredPlan] = useState(localStorage.getItem('userPlan') || 'BASIC PLAN');
 
     // Dynamic logic for the Title Tag (Beta, Pro, Elite, Basic)
-    const storedPlan = localStorage.getItem('userPlan') || 'BASIC';
     let planBadge = 'BASIC';
     if (storedPlan === 'BETA PLAN') planBadge = 'BETA';
     if (storedPlan === 'PRO LEVEL') planBadge = 'PRO';
     if (storedPlan === 'ELITE CORP') planBadge = 'ELITE';
 
     useEffect(() => {
+        const syncPlan = () => setStoredPlan(localStorage.getItem('userPlan') || 'BASIC PLAN');
+        window.addEventListener('planChanged', syncPlan);
+        window.addEventListener('storage', syncPlan);
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
@@ -44,6 +48,11 @@ const Navbar = () => {
             } catch (err) { }
         };
         fetchHealthScore();
+
+        return () => {
+            window.removeEventListener('planChanged', syncPlan);
+            window.removeEventListener('storage', syncPlan);
+        };
     }, [token]);
 
     const handleLogout = () => {

@@ -16,6 +16,7 @@ const Login = () => {
             const res = await axios.post(`${API_URL}/auth/login`, { phone, password });
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
+            localStorage.setItem('userPlan', res.data.user.currentPlan || 'BASIC PLAN');
             navigate('/dashboard');
         } catch (err) {
             alert(err.response?.data?.error || 'Login failed');

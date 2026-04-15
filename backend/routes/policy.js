@@ -7,6 +7,12 @@ const { calculateWeeklyPremium } = require('../ai-module/riskAssessment');
 
 const router = express.Router();
 
+const PLAN_PRICES = {
+    'BETA PLAN': 45,
+    'PRO LEVEL': 95,
+    'ELITE CORP': 150
+};
+
 // Get premium quote
 router.get('/quote', auth, async (req, res) => {
     try {
@@ -47,11 +53,62 @@ router.post('/buy', auth, async (req, res) => {
             user: user._id,
             type: 'premium_payment',
             amount: quote.weeklyPremium,
+            paymentMethod: 'razorpay',
             status: 'success'
         });
         await tx.save();
 
         res.status(201).json({ message: 'Policy activated successfully', policy });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Change Plan
+router.post('/change-plan', auth, async (req, res) => {
+    try {
+        const { planName, paymentMethod } = req.body;
+        const amount = PLAN_PRICES[planName];
+
+        if (!amount) {
+            return res.status(400).json({ error: 'Invalid plan selected' });
+        }
+
+        if (!['wallet', 'razorpay'].includes(paymentMethod)) {
+            return res.status(400).json({ error: 'Invalid payment method' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (paymentMethod === 'wallet') {
+            if (user.walletBalance < amount) {
+                return res.status(400).json({ error: 'Insufficient wallet balance' });
+            }
+            user.walletBalance -= amount;
+        }
+
+        user.currentPlan = planName;
+        await user.save();
+
+        const tx = new Transaction({
+            user: user._id,
+            type: 'plan_upgrade',
+            amount,
+            paymentMethod,
+            planName,
+            status: 'success'
+        });
+        await tx.save();
+
+        res.json({
+            message: paymentMethod === 'wallet'
+                ? `Plan changed to ${planName}. Rs.${amount} deducted from wallet.`
+                : `Plan changed to ${planName}. Razorpay payment successful.`,
+            currentPlan: user.currentPlan,
+            walletBalance: user.walletBalance,
+            transaction: tx
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

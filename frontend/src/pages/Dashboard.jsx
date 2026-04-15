@@ -5,12 +5,18 @@ import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote } from 'lucide-r
 import { toast } from 'react-toastify';
 
 const API_URL = 'http://localhost:5000/api';
+const PLAN_PRICES = {
+    'BETA PLAN': 45,
+    'PRO LEVEL': 95,
+    'ELITE CORP': 150
+};
 
 const Dashboard = () => {
     const [policy, setPolicy] = useState(null);
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
     const [showPayoutModal, setShowPayoutModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null);
     const [currentPlan, setCurrentPlan] = useState(localStorage.getItem('userPlan') || 'BASIC PLAN');
     const [upiId, setUpiId] = useState('');
     const [payoutAmount, setPayoutAmount] = useState('');
@@ -26,6 +32,11 @@ const Dashboard = () => {
             const res = await axios.get(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
             setUser(res.data);
             localStorage.setItem('user', JSON.stringify(res.data));
+            if (res.data.currentPlan) {
+                setCurrentPlan(res.data.currentPlan);
+                localStorage.setItem('userPlan', res.data.currentPlan);
+                window.dispatchEvent(new Event('planChanged'));
+            }
         } catch (err) {
             console.log('Error fetching user', err);
         }
@@ -100,11 +111,40 @@ const Dashboard = () => {
     }
 
     const handleUpgrade = (planName) => {
-        setCurrentPlan(planName);
-        localStorage.setItem('userPlan', planName);
-        let color = planName === 'PRO LEVEL' ? '#3B82F6' : '#10B981';
-        toast.success(`Successfully Upgraded to ${planName} via Simulated Razorpay Subscriptions.`);
-        setShowUpgradeModal(false);
+        if (currentPlan === planName) return;
+        setSelectedPlan(planName);
+    };
+
+    const handlePlanPayment = async (paymentMethod) => {
+        if (!selectedPlan) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/policy/change-plan`, {
+                planName: selectedPlan,
+                paymentMethod
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const updatedUser = {
+                ...user,
+                walletBalance: res.data.walletBalance,
+                currentPlan: res.data.currentPlan
+            };
+
+            setUser(updatedUser);
+            setCurrentPlan(res.data.currentPlan);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            localStorage.setItem('userPlan', res.data.currentPlan);
+            window.dispatchEvent(new Event('planChanged'));
+
+            toast.success(res.data.message);
+            setSelectedPlan(null);
+            setShowUpgradeModal(false);
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Plan change failed');
+        }
     };
 
     return (
@@ -277,7 +317,33 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <button className="btn btn-logout" onClick={() => setShowUpgradeModal(false)}>Close Window</button>
+                        {selectedPlan && (
+                            <div className="card" style={{ marginBottom: '20px', padding: '20px', textAlign: 'left', border: '2px solid var(--primary)' }}>
+                                <h4 style={{ color: 'var(--dark)', marginBottom: '8px' }}>Pay for {selectedPlan}</h4>
+                                <p style={{ color: 'var(--text-light)', marginBottom: '15px' }}>
+                                    Amount due: <strong>₹{PLAN_PRICES[selectedPlan]}</strong>. Choose wallet balance or Razorpay to activate this plan.
+                                </p>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    <button className="btn btn-success" onClick={() => handlePlanPayment('wallet')}>
+                                        Pay from Wallet
+                                    </button>
+                                    <button className="btn btn-primary" onClick={() => handlePlanPayment('razorpay')}>
+                                        Pay with Razorpay
+                                    </button>
+                                    <button className="btn btn-logout" onClick={() => setSelectedPlan(null)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                                <p style={{ color: 'var(--text-light)', marginTop: '10px', fontSize: '0.9rem' }}>
+                                    Wallet balance: ₹{user?.walletBalance || 0}
+                                </p>
+                            </div>
+                        )}
+
+                        <button className="btn btn-logout" onClick={() => {
+                            setSelectedPlan(null);
+                            setShowUpgradeModal(false);
+                        }}>Close Window</button>
                     </div>
                 </div>
             )}
