@@ -9,7 +9,6 @@ const Transaction = require('../models/Transaction');
 
 const router = express.Router();
 
-axios.post(`${API}/api/claim/auto-trigger`, data);
 
 // ✅ Only backend env variables
 const API_KEY = process.env.OPENWEATHER_API_KEY;
