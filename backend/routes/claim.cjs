@@ -8,7 +8,6 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 
 const router = express.Router();
-const API = import.meta.env.VITE_API_URL;
 
 axios.post(`${API}/api/claim/auto-trigger`, data);
 
