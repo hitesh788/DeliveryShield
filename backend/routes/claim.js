@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const auth = require('../middleware/auth');
+
 const Claim = require('../models/Claim');
 const Policy = require('../models/Policy');
 const User = require('../models/User');
@@ -8,9 +9,10 @@ const Transaction = require('../models/Transaction');
 
 const router = express.Router();
 
+// ✅ Only backend env variables
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 
-// AUTO CLAIM
+// ================= AUTO CLAIM =================
 router.post('/auto-trigger', auth, async (req, res) => {
     try {
         let { disruptionType, lat, lon } = req.body;
@@ -18,29 +20,26 @@ router.post('/auto-trigger', auth, async (req, res) => {
         console.log("📥 BODY:", req.body);
 
         const user = await User.findById(req.user.id);
-        console.log("👤 USER:", user);
-
         const policy = await Policy.findOne({ user: user._id, status: 'active' });
-        console.log("📄 POLICY:", policy);
 
         if (!policy) {
             return res.status(400).json({ error: 'No active policy found' });
         }
 
-        // Default location
+        // 🌍 Default location (Chennai)
         if (!lat || !lon) {
             lat = 13.0827;
             lon = 80.2707;
         }
 
-        console.log("🔑 API KEY:", API_KEY);
+        console.log("🔑 API KEY:", API_KEY ? "FOUND ✅" : "MISSING ❌");
 
-        // Mock fallback
+        // 🔁 Default mock values
         let temp = Math.floor(Math.random() * 15) + 25;
         let condition = ["Clear", "Clouds", "Rain", "Haze"][Math.floor(Math.random() * 4)];
         let aqi = Math.floor(Math.random() * 5) + 1;
 
-        // 🌦 Real Weather API
+        // 🌦 REAL WEATHER API
         if (API_KEY) {
             try {
                 const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
@@ -53,7 +52,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
 
                 console.log("✅ Weather:", temp, condition);
 
-                // AQI API
+                // 🌫 AQI API (only for pollution)
                 if (disruptionType === 'Pollution') {
                     const aqiUrl = `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
                     const aqiRes = await axios.get(aqiUrl);
@@ -64,11 +63,11 @@ router.post('/auto-trigger', auth, async (req, res) => {
                 }
 
             } catch (err) {
-                console.log("⚠️ API failed, using mock data");
+                console.log("⚠️ Weather API failed, using mock data");
             }
         }
 
-        // 🔍 FRAUD DETECTION (IMPROVED)
+        // ================= FRAUD CHECK =================
         let isFraudulent = false;
         let fraudScore = 0;
         let rejectReason = '';
@@ -77,7 +76,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             if (temp < 38) {
                 isFraudulent = true;
                 fraudScore = 95;
-                rejectReason = `❌ Claim Rejected: Extreme Heat condition not met.\nLive temperature is ${temp}°C, which is below the required threshold of 38°C.`;
+                rejectReason = `❌ Claim Rejected: Extreme Heat condition not met.\nTemperature: ${temp}°C (required ≥ 38°C)`;
             }
         }
 
@@ -85,7 +84,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             if (!['Rain', 'Thunderstorm', 'Drizzle'].includes(condition)) {
                 isFraudulent = true;
                 fraudScore = 98;
-                rejectReason = `❌ Claim Rejected: No rainfall detected.\nCurrent weather condition is "${condition}", which does not qualify as Heavy Rain.`;
+                rejectReason = `❌ Claim Rejected: No rainfall detected.\nCondition: "${condition}"`;
             }
         }
 
@@ -93,19 +92,19 @@ router.post('/auto-trigger', auth, async (req, res) => {
             if (aqi < 4) {
                 isFraudulent = true;
                 fraudScore = 97;
-                rejectReason = `❌ Claim Rejected: Pollution level too low.\nCurrent AQI is Level ${aqi}, but minimum required is Level 4 (Poor or worse).`;
+                rejectReason = `❌ Claim Rejected: AQI too low.\nCurrent AQI Level: ${aqi} (required ≥ 4)`;
             }
         }
 
         else {
             isFraudulent = true;
             fraudScore = 100;
-            rejectReason = `❌ Invalid disruption type selected.`;
+            rejectReason = `❌ Invalid disruption type`;
         }
 
         const payout = Math.round((policy.incomeCovered || 7000) / 7);
 
-        // ❌ REJECT CLAIM
+        // ================= REJECT =================
         if (isFraudulent) {
             const rejectedClaim = new Claim({
                 user: user._id,
@@ -127,7 +126,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             });
         }
 
-        // ✅ APPROVE CLAIM
+        // ================= APPROVE =================
         const claim = new Claim({
             user: user._id,
             policy: policy._id,
@@ -157,18 +156,18 @@ router.post('/auto-trigger', auth, async (req, res) => {
 
         await tx.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             message: `✅ Claim Approved! ₹${payout} credited`,
             claim
         });
 
     } catch (err) {
-        console.error("❌ CLAIM ERROR FULL:", err);
-        res.status(500).json({ error: err.message });
+        console.error("❌ CLAIM ERROR:", err);
+        return res.status(500).json({ error: err.message });
     }
 });
 
-// GET CLAIM HISTORY
+// ================= CLAIM HISTORY =================
 router.get('/', auth, async (req, res) => {
     try {
         const claims = await Claim.find({ user: req.user.id }).sort({ createdAt: -1 });
