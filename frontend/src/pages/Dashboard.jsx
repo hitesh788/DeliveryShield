@@ -25,11 +25,13 @@ const Dashboard = () => {
     const [upiId, setUpiId] = useState('');
     const [payoutAmount, setPayoutAmount] = useState('');
     const [topUpAmount, setTopUpAmount] = useState('');
+    const [stats, setStats] = useState({ totalClaims: 0, approvedClaims: 0, totalPayout: 0 });
 
     useEffect(() => {
         fetchPolicy();
         fetchQuote();
         refreshUserData();
+        fetchStats();
     }, []);
 
     const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
@@ -69,6 +71,20 @@ const Dashboard = () => {
         }
     };
 
+    const fetchStats = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/claim`, { headers: authHeaders() });
+            const approved = res.data.filter(c => c.status === 'approved' || c.status === 'auto-approved');
+            setStats({
+                totalClaims: res.data.length,
+                approvedClaims: approved.length,
+                totalPayout: approved.reduce((sum, c) => sum + c.amountPayout, 0)
+            });
+        } catch (err) {
+            console.log('Error fetching stats', err);
+        }
+    };
+
     const triggerMockClaim = async (type) => {
         const toastId = toast.loading("Acquiring live GPS coordinates & passing to satellite...");
         try {
@@ -91,6 +107,7 @@ const Dashboard = () => {
             });
             toast.update(toastId, { render: res.data.message, type: "success", isLoading: false, autoClose: 5000 });
             refreshUserData();
+            fetchStats();
         } catch (err) {
             toast.update(toastId, { render: err.response?.data?.message || err.response?.data?.error || 'Claim rejected dynamically', type: "error", isLoading: false, autoClose: 5000 });
         }
@@ -157,8 +174,15 @@ const Dashboard = () => {
     };
 
     const handleUpgrade = (planName) => {
-        if (currentPlan === planName) return;
+        if (currentPlan === planName) {
+            toast.info(`You are already on the ${planName}`);
+            return;
+        }
         setSelectedPlan(planName);
+        // Scroll to payment section
+        setTimeout(() => {
+            document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
     };
 
     const handlePlanPayment = async (paymentMethod) => {
@@ -204,7 +228,14 @@ const Dashboard = () => {
 
             {quote && (
                 <div className="card" style={{ marginBottom: '20px', padding: '18px' }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}><Info size={18} /> Smart Protection Insights</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Info size={18} /> Smart Protection Insights</h3>
+                        {quote.liveWeather && (
+                            <span className="badge active" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                                📡 LIVE: {quote.liveWeather.temp}°C
+                            </span>
+                        )}
+                    </div>
                     <p style={{ color: 'var(--text-light)', marginBottom: '10px' }}>Recommended plan: <strong>{quote.recommendedPlan}</strong></p>
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         {quote.explanation?.map(item => <span key={item} className="badge pending">{item}</span>)}
@@ -274,6 +305,27 @@ const Dashboard = () => {
                         )}
                         {policy && <button onClick={() => setShowPolicyModal(true)} className="btn btn-primary" style={{ flex: 1 }}><Info size={16} /> Details</button>}
                         {policy && <button onClick={toggleAutoRenew} className="btn btn-dark" style={{ flex: 1 }}><RefreshCw size={16} /> {user?.autoRenew ? 'Auto Renew On' : 'Auto Renew Off'}</button>}
+                    </div>
+                </div>
+
+                <div className="stat-card" style={{ background: '#F8FAFC', color: 'var(--text)', border: '1px solid #E2E8F0' }}>
+                    <div className="stat-title" style={{ color: 'var(--text-light)' }}>Platform Analytics</div>
+                    <div style={{ marginTop: '15px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>Total Claims</span>
+                            <span style={{ fontWeight: 700 }}>{stats.totalClaims}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>Approved</span>
+                            <span style={{ fontWeight: 700, color: 'var(--secondary)' }}>{stats.approvedClaims}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>Total Payouts</span>
+                            <span style={{ fontWeight: 700 }}>₹{stats.totalPayout}</span>
+                        </div>
+                    </div>
+                    <div className="stat-action" style={{ marginTop: '20px' }}>
+                        <Link to="/claims" className="btn btn-outline" style={{ width: '100%', fontSize: '0.8rem', border: '1px solid #CBD5E1' }}>View Full History</Link>
                     </div>
                 </div>
             </div>
@@ -377,11 +429,11 @@ const Dashboard = () => {
 
             {showUpgradeModal && (
                 <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '800px' }}>
+                    <div className="modal-content modal-lg">
                         <h3 className="modal-title" style={{ fontSize: '2rem' }}>Upgrade Your Protection Layer</h3>
                         <p style={{ color: 'var(--text-light)', marginBottom: '30px' }}>Select an enterprise-tier policy matrix to cover wider disruption margins.</p>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', textAlign: 'left', marginBottom: '30px' }}>
+                        <div className="plan-grid">
                             <div className="card" style={{ border: '2px solid #E2E8F0', padding: '20px' }}>
                                 <h4 style={{ color: 'var(--text-light)', textTransform: 'uppercase' }}>Beta Plan</h4>
                                 <h2 style={{ margin: '10px 0', color: 'var(--dark)' }}>₹45 <span style={{ fontSize: '1rem', color: 'gray' }}>/week</span></h2>
@@ -445,7 +497,7 @@ const Dashboard = () => {
                         )}
 
                         {selectedPlan && (
-                            <div className="card" style={{ marginBottom: '20px', padding: '20px', textAlign: 'left', border: '2px solid var(--primary)' }}>
+                            <div id="payment-section" className="card" style={{ marginBottom: '20px', padding: '20px', textAlign: 'left', border: '2px solid var(--primary)', animation: 'fadeIn 0.5s ease-out' }}>
                                 <h4 style={{ color: 'var(--dark)', marginBottom: '8px' }}>Pay for {selectedPlan}</h4>
                                 <p style={{ color: 'var(--text-light)', marginBottom: '15px' }}>
                                     Amount due: <strong>₹{PLAN_PRICES[selectedPlan]}</strong>. Choose wallet balance or Razorpay to activate this plan.
@@ -474,7 +526,23 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
+            <div className="card" style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC' }}>
+                <div>
+                    <h4 style={{ marginBottom: '5px' }}>Need assistance with your coverage?</h4>
+                    <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>Our 24/7 support team is ready to help with any claim or payout issues.</p>
+                </div>
+                <a
+                    href="https://mail.google.com/mail/?view=cm&fs=1&to=softgridtechnologies@gmail.com&su=Dashboard Support Help&body=Help ID: [TRANS-582]%0D%0AI encountered an issue while using the dashboard: "
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-logout"
+                    style={{ textDecoration: 'none' }}
+                >
+                    Email Support Center
+                </a>
+            </div>
         </div>
+
     );
 };
 

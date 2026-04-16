@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+console.log("📑 Loading Claim Model Schema...");
 
 const claimSchema = new mongoose.Schema({
     policy: { type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true },
@@ -6,7 +7,7 @@ const claimSchema = new mongoose.Schema({
     disruptionType: { type: String, enum: ['Heavy Rain', 'Extreme Heat', 'Pollution', 'Curfew'], required: true },
     dateOfDisruption: { type: Date, required: true },
     amountPayout: { type: Number, required: true },
-    status: { type: String, enum: ['auto-approved', 'processing', 'rejected'], default: 'auto-approved' },
+    status: { type: String, enum: ['approved', 'auto-approved', 'processing', 'rejected'], default: 'approved' },
     fraudScore: { type: Number, default: 0 }, // 0-100, >70 is suspicious
     isFraudulent: { type: Boolean, default: false },
     rejectionReason: { type: String, default: '' },

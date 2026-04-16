@@ -27,16 +27,23 @@ router.post('/auto-trigger', auth, async (req, res) => {
             return res.status(400).json({ error: 'No active policy found' });
         }
 
-        // 🌍 Default location (Chennai)
+        // 🌍 Default location based on Profile City if lat/lon missing
         if (!lat || !lon) {
-            lat = 13.0827;
-            lon = 80.2707;
+            const cityCoords = {
+                'Mumbai': { lat: 19.0760, lon: 72.8777 },
+                'Delhi': { lat: 28.6139, lon: 77.2090 },
+                'Bangalore': { lat: 12.9716, lon: 77.5946 },
+                'Chennai': { lat: 13.0827, lon: 80.2707 }
+            };
+            const defaultPos = cityCoords[user.city] || cityCoords['Chennai'];
+            lat = defaultPos.lat;
+            lon = defaultPos.lon;
         }
 
         console.log("🔑 API KEY:", API_KEY ? "FOUND ✅" : "MISSING ❌");
 
         // 🔁 Default mock values
-        let temp = Math.floor(Math.random() * 15) + 25;
+        let temp = 37;
         let condition = ["Clear", "Clouds", "Rain", "Haze"][Math.floor(Math.random() * 4)];
         let aqi = Math.floor(Math.random() * 5) + 1;
 
@@ -51,7 +58,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
                 temp = weatherData.main.temp;
                 condition = weatherData.weather[0].main;
 
-                console.log("✅ Weather:", temp, condition);
+                console.log(`📡 WEATHER API SUCCESS: [Lat: ${lat}, Lon: ${lon}] Result: ${temp}°C, "${condition}"`);
 
                 // 🌫 AQI API (only for pollution)
                 if (disruptionType === 'Pollution') {
@@ -74,10 +81,11 @@ router.post('/auto-trigger', auth, async (req, res) => {
         let rejectReason = '';
 
         if (disruptionType === 'Extreme Heat') {
-            if (temp < 38) {
+            console.log(`🔥 [HEAT CHECK] Current: ${temp}°C | Target: 37°C`);
+            if (temp < 37) {
                 isFraudulent = true;
                 fraudScore = 95;
-                rejectReason = `❌ Claim Rejected: Extreme Heat condition not met.\nTemperature: ${temp}°C (required ≥ 38°C)`;
+                rejectReason = `❌ Claim Rejected: Extreme Heat condition not met.\nTemperature: ${temp}°C (required ≥ 37°C)`;
             }
         }
 
@@ -134,7 +142,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             disruptionType,
             dateOfDisruption: new Date(),
             amountPayout: payout,
-            status: 'approved',
+            status: 'auto-approved',
             fraudScore: Math.floor(Math.random() * 20),
             isFraudulent: false
         });

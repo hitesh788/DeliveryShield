@@ -3,7 +3,17 @@ const auth = require('../middleware/auth');
 const Policy = require('../models/Policy');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const axios = require('axios');
+const API_KEY = process.env.OPENWEATHER_API_KEY;
 const { calculateWeeklyPremium, explainRisk, recommendPlan, getPredictiveAlerts } = require('../ai-module/riskAssessment');
+
+const cityCoords = {
+    'Mumbai': { lat: 19.0760, lon: 72.8777 },
+    'Delhi': { lat: 28.6139, lon: 77.2090 },
+    'Bangalore': { lat: 12.9716, lon: 77.5946 },
+    'Chennai': { lat: 13.0827, lon: 80.2707 }
+};
+
 
 const router = express.Router();
 
@@ -48,13 +58,32 @@ const PLAN_DETAILS = {
 router.get('/quote', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
+
+        let weather = null;
+        if (API_KEY) {
+            try {
+                const pos = cityCoords[user.city] || cityCoords['Chennai'];
+                const weatherRes = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.lat}&lon=${pos.lon}&appid=${API_KEY}&units=metric`);
+                const aqiRes = await axios.get(`http://api.openweathermap.org/data/2.5/air_pollution?lat=${pos.lat}&lon=${pos.lon}&appid=${API_KEY}`);
+
+                weather = {
+                    temp: weatherRes.data.main.temp,
+                    condition: weatherRes.data.weather[0].main,
+                    aqi: aqiRes.data.list[0].main.aqi
+                };
+            } catch (wErr) {
+                console.log("Weather fetch failed for quote");
+            }
+        }
+
         const quote = calculateWeeklyPremium(user.averageWeeklyIncome, user.city);
         res.json({
             ...quote,
-            explanation: explainRisk(user.averageWeeklyIncome, user.city),
-            recommendedPlan: recommendPlan(user.averageWeeklyIncome, user.city),
-            predictiveAlerts: getPredictiveAlerts(user.city),
-            plans: PLAN_DETAILS
+            explanation: explainRisk(user.averageWeeklyIncome, user.city, weather),
+            recommendedPlan: recommendPlan(user.averageWeeklyIncome, user.city, weather),
+            predictiveAlerts: getPredictiveAlerts(user.city, weather),
+            plans: PLAN_DETAILS,
+            liveWeather: weather
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -1,18 +1,23 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
+
 app.use(cors({
   origin: [
     "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
     "http://localhost:3000",
     "https://deliveryshield.vercel.app"
   ],
   credentials: true
 }));
+
 app.use(express.json());
 
 // Debug logs
@@ -36,19 +41,19 @@ const PORT = process.env.PORT || 5000;
 
 // Force server to start (IMPORTANT)
 app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
 
 // MongoDB connection (separate)
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ MongoDB Connected'))
-    .catch(err => console.error('❌ DB ERROR:', err));
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.error('❌ DB ERROR:', err));
 
 // Catch hidden crashes
 process.on('uncaughtException', err => {
-    console.error('❌ UNCAUGHT EXCEPTION:', err);
+  console.error('❌ UNCAUGHT EXCEPTION:', err);
 });
 
 process.on('unhandledRejection', err => {
-    console.error('❌ UNHANDLED REJECTION:', err);
+  console.error('❌ UNHANDLED REJECTION:', err);
 });

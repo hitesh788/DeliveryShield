@@ -229,10 +229,11 @@ body {
 
 .overview-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 }
+
 
 .stat-card {
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
@@ -359,8 +360,12 @@ body {
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  /* Start from top to allow scrolling */
+  padding: 40px 20px;
   z-index: 1000;
+  overflow-y: auto;
+  /* Enable scrolling on the overlay */
 }
 
 .modal-content {
@@ -371,7 +376,16 @@ body {
   max-width: 400px;
   box-shadow: var(--shadow-lg);
   text-align: center;
+  position: relative;
+  margin-top: auto;
+  margin-bottom: auto;
+  /* Keeps it centered if small, scrollable if large */
 }
+
+.modal-content.modal-lg {
+  max-width: 900px;
+}
+
 
 .razorpay-logo {
   width: 120px;
@@ -402,4 +416,12 @@ body {
 
 .modal-actions .btn {
   flex: 1;
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  text-align: left;
+  margin-bottom: 30px;
 }

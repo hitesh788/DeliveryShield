@@ -7,14 +7,20 @@ import './Login.css';
 const API_URL = 'http://localhost:5000/api';
 
 const Login = () => {
-    const [phone, setPhone] = useState('');
+    const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post(`${API_URL}/auth/login`, { phone, password });
+            const payload = { password };
+            if (loginId.includes('@')) {
+                payload.email = loginId;
+            } else {
+                payload.phone = loginId;
+            }
+            const res = await axios.post(`${API_URL}/auth/login`, payload);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             localStorage.setItem('userPlan', res.data.user.currentPlan || 'BASIC PLAN');
@@ -31,17 +37,17 @@ const Login = () => {
                 <div className="auth-form-panel">
                     <h2>Welcome Back</h2>
                     <p className="auth-subtitle">Sign in to manage your coverage, wallet, and claims.</p>
-                <form onSubmit={handleLogin}>
-                    <div className="form-group">
-                        <label>Phone Number</label>
-                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-                    </div>
-                    <div className="form-group">
-                        <label>Password</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    </div>
-                    <button type="submit" className="btn btn-primary">Login</button>
-                </form>
+                    <form onSubmit={handleLogin}>
+                        <div className="form-group">
+                            <label>Phone or Email</label>
+                            <input type="text" value={loginId} onChange={(e) => setLoginId(e.target.value)} required />
+                        </div>
+                        <div className="form-group">
+                            <label>Password</label>
+                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        </div>
+                        <button type="submit" className="btn btn-primary">Login</button>
+                    </form>
                     <p>Don't have an account? <Link to="/register">Register</Link></p>
                     <p>Admin? <Link to="/admin-login">Use admin login</Link></p>
                 </div>
