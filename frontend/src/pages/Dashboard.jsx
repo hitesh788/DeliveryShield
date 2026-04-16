@@ -3,9 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote, Info, RefreshCw, Sun, Cloud, Droplets, MapPin } from 'lucide-react';
 import { toast } from 'react-toastify';
+import API_URL from '../config';
 import './Claims.css';
-
-const API_URL = 'http://localhost:5000/api';
 const PLAN_PRICES = {
     'BETA PLAN': 45,
     'PRO LEVEL': 95,

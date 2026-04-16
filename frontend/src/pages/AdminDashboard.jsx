@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { BarChart3, ShieldAlert } from 'lucide-react';
+import API_URL from '../config';
 import './Claims.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);

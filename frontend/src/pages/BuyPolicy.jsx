@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../config';
 import './BuyPolicy.css';
 import './Claims.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const BuyPolicy = () => {
     const [quote, setQuote] = useState(null);

@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import API_URL from '../config';
 import './Login.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const Login = () => {
     const [loginId, setLoginId] = useState('');

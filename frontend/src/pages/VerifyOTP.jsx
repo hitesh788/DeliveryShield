@@ -3,9 +3,8 @@ import axios from 'axios';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Shield } from 'lucide-react';
+import API_URL from '../config';
 import './Login.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const VerifyOTP = () => {
     const [otp, setOtp] = useState('');

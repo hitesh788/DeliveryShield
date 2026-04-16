@@ -7,18 +7,17 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-  "http://localhost:3000",
-  "http://localhost:8081",
-  "http://172.16.149.138:8081",
-  ... (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
-];
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:3000",
+    "http://localhost:8081",
+    "http://172.16.149.138:8081",
+    "https://deliveryshield.vercel.app",
+    "https://deliveryshield-app.vercel.app"
+  ],
   credentials: true
 }));
 

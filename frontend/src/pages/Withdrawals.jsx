@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Banknote, CreditCard, ArrowRightLeft } from 'lucide-react';
+import API_URL from '../config';
 import './Claims.css'; // Recycled enterprise table CSS
-
-const API_URL = 'http://localhost:5000/api';
 
 const Withdrawals = () => {
     const [withdrawals, setWithdrawals] = useState([]);

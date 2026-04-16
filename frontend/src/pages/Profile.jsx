@@ -6,9 +6,8 @@ import {
     ShieldCheck, Activity, Star, MessageSquare, AlertCircle,
     Camera, Mail, Award, CheckCircle2
 } from 'lucide-react';
+import API_URL from '../config';
 import './Claims.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const Profile = () => {
     const [form, setForm] = useState({
