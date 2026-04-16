@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { User, Save, MapPin, Briefcase, IndianRupee, CreditCard, ShieldCheck, Activity } from 'lucide-react';
+import { User, Save, MapPin, Briefcase, IndianRupee, CreditCard, ShieldCheck, Activity, Star, MessageSquare, AlertCircle, Hash } from 'lucide-react';
 import './Claims.css';
 
 const API_URL = 'http://localhost:5000/api';
@@ -14,6 +14,7 @@ const Profile = () => {
         averageWeeklyIncome: 4000,
         upiId: ''
     });
+    const [user, setUser] = useState(null);
     const [stats, setStats] = useState({
         totalClaims: 0,
         approvedClaims: 0,
@@ -30,10 +31,12 @@ const Profile = () => {
                     axios.get(`${API_URL}/claim`, { headers: { Authorization: `Bearer ${token}` } })
                 ]);
 
+                setUser(userRes.data);
                 setForm({
                     name: userRes.data.name || '',
                     city: userRes.data.city || 'Mumbai',
                     platform: userRes.data.platform || 'Zomato',
+                    platformId: userRes.data.platformId || '',
                     averageWeeklyIncome: userRes.data.averageWeeklyIncome || 4000,
                     upiId: userRes.data.upiId || ''
                 });
@@ -67,6 +70,7 @@ const Profile = () => {
             const res = await axios.put(`${API_URL}/auth/profile`, form, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            setUser(res.data.user);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             toast.update(toastId, { render: "Profile synchronized effectively!", type: "success", isLoading: false, autoClose: 3000 });
         } catch (err) {
@@ -104,11 +108,15 @@ const Profile = () => {
                             <select className="modal-input" style={{ margin: 0, textAlign: 'left' }} name="platform" value={form.platform} onChange={handleChange}>
                                 <option value="Zomato">Zomato</option>
                                 <option value="Swiggy">Swiggy</option>
-                                <option value="Amazon">Amazon</option>
-                                <option value="Zepto">Zepto</option>
                                 <option value="Blinkit">Blinkit</option>
+                                <option value="Zepto">Zepto</option>
+                                <option value="Amazon">Amazon</option>
                                 <option value="Other">Other</option>
                             </select>
+                        </div>
+                        <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>Platform Rider ID</label>
+                            <input className="modal-input" style={{ margin: 0, textAlign: 'left' }} name="platformId" value={form.platformId} onChange={handleChange} placeholder="e.g. ZOM-9921" />
                         </div>
                         <div className="form-group">
                             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>Operational City</label>
@@ -146,6 +154,58 @@ const Profile = () => {
                         </div>
                         <h4 style={{ opacity: 0.9, fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '5px' }}>Risk Status</h4>
                         <h2 style={{ fontSize: '1.8rem' }}>Verified</h2>
+                    </div>
+
+                    <div className="card" style={{ padding: '20px', background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', color: 'white' }}>
+                        <h4 style={{ fontSize: '0.8rem', marginBottom: '15px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase' }}>
+                            <Activity size={14} /> Reputation Hub
+                        </h4>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '10px' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '4px' }}>RIDER ID</div>
+                                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{user?.platformId || 'NOT SET'}</div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '10px' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '4px' }}>AVG RATING</div>
+                                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Star size={14} fill="#fbbf24" /> {user?.rating || '4.5'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <MessageSquare size={12} /> Positive Feed
+                                </span>
+                                <span style={{ fontWeight: 600 }}>{user?.feedbackCount || 0}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <AlertCircle size={12} /> Complaints
+                                </span>
+                                <span style={{ fontWeight: 600, color: (user?.complaintsCount > 0) ? '#f43f5e' : '#10b981' }}>
+                                    {user?.complaintsCount || 0}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card" style={{ padding: '20px', background: '#f0f9ff', color: 'var(--dark)' }}>
+                        <h4 style={{ fontSize: '0.8rem', marginBottom: '15px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase' }}>
+                            <MessageSquare size={14} /> Recent Feedback
+                        </h4>
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                            <div style={{ fontSize: '0.8rem', borderLeft: '3px solid #10b981', paddingLeft: '10px' }}>
+                                <div style={{ color: '#059669', fontWeight: 600, fontSize: '0.7rem' }}>5.0 ⭐ Excellent Delivery</div>
+                                <p style={{ margin: '4px 0', fontStyle: 'italic', fontSize: '0.75rem' }}>"Fast and safe handling of sensitive items."</p>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', borderLeft: '3px solid #fbbf24', paddingLeft: '10px' }}>
+                                <div style={{ color: '#d97706', fontWeight: 600, fontSize: '0.7rem' }}>4.0 ⭐ Polite Rider</div>
+                                <p style={{ margin: '4px 0', fontStyle: 'italic', fontSize: '0.75rem' }}>"Arrived on time. Package was slightly damp from rain."</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="card" style={{ padding: '20px' }}>

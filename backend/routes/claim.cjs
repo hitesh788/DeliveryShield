@@ -6,6 +6,7 @@ const Claim = require('../models/Claim');
 const Policy = require('../models/Policy');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const { getVaultModel } = require('../utils/vault');
 
 const router = express.Router();
 
@@ -85,7 +86,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             if (temp < 37) {
                 isFraudulent = true;
                 fraudScore = 95;
-                rejectReason = `❌ Claim Rejected: Extreme Heat condition not met.\nTemperature: ${temp}°C (required ≥ 37°C)`;
+                rejectReason = `Extreme Heat condition not met. Temperature: ${temp}°C (required ≥ 37°C)`;
             }
         }
 
@@ -93,7 +94,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             if (!['Rain', 'Thunderstorm', 'Drizzle'].includes(condition)) {
                 isFraudulent = true;
                 fraudScore = 98;
-                rejectReason = `❌ Claim Rejected: No rainfall detected.\nCondition: "${condition}"`;
+                rejectReason = `No rainfall detected. Current condition: "${condition}"`;
             }
         }
 
@@ -101,7 +102,7 @@ router.post('/auto-trigger', auth, async (req, res) => {
             if (aqi < 4) {
                 isFraudulent = true;
                 fraudScore = 97;
-                rejectReason = `❌ Claim Rejected: AQI too low.\nCurrent AQI Level: ${aqi} (required ≥ 4)`;
+                rejectReason = `AQI too low. Current level: ${aqi} (required ≥ 4)`;
             }
         }
 
@@ -136,7 +137,10 @@ router.post('/auto-trigger', auth, async (req, res) => {
         }
 
         // ================= APPROVE =================
-        const claim = new Claim({
+        // 🔐 Use Individual User Vault for database separation
+        const UserClaim = getVaultModel(user._id, 'Claim');
+
+        const claim = new UserClaim({
             user: user._id,
             policy: policy._id,
             disruptionType,
@@ -153,8 +157,9 @@ router.post('/auto-trigger', auth, async (req, res) => {
         user.walletBalance = (user.walletBalance || 0) + payout;
         await user.save();
 
-        // 💳 Transaction
-        const tx = new Transaction({
+        // 💳 Transaction in User Vault
+        const UserTx = getVaultModel(user._id, 'Transaction');
+        const tx = new UserTx({
             user: user._id,
             type: 'claim_payout',
             amount: payout,
@@ -179,7 +184,8 @@ router.post('/auto-trigger', auth, async (req, res) => {
 // ================= CLAIM HISTORY =================
 router.get('/', auth, async (req, res) => {
     try {
-        const claims = await Claim.find({ user: req.user.id }).sort({ createdAt: -1 });
+        const UserClaim = getVaultModel(req.user.id, 'Claim');
+        const claims = await UserClaim.find({ user: req.user.id }).sort({ createdAt: -1 });
         res.json(claims);
     } catch (err) {
         res.status(500).json({ error: err.message });

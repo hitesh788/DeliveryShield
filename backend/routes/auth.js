@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getVaultModel } = require('../utils/vault');
 const router = express.Router();
 const publicUser = (user) => ({
     id: user._id,
@@ -10,6 +11,10 @@ const publicUser = (user) => ({
     phone: user.phone,
     role: user.role,
     platform: user.platform,
+    platformId: user.platformId,
+    rating: user.rating,
+    feedbackCount: user.feedbackCount,
+    complaintsCount: user.complaintsCount,
     city: user.city,
     averageWeeklyIncome: user.averageWeeklyIncome,
     walletBalance: user.walletBalance,
@@ -20,7 +25,7 @@ const publicUser = (user) => ({
 
 router.post('/register', async (req, res) => {
     try {
-        let { name, email, phone, password, platform, city, averageWeeklyIncome } = req.body;
+        let { name, email, phone, password, platform, platformId, city, averageWeeklyIncome } = req.body;
         if (!email) return res.status(400).json({ error: 'Email address is required' });
         email = email.trim().toLowerCase();
         phone = phone.trim();
@@ -36,6 +41,7 @@ router.post('/register', async (req, res) => {
             phone,
             password: hashedPassword,
             platform,
+            platformId: platformId || '',
             city,
             averageWeeklyIncome
         });
@@ -97,6 +103,24 @@ router.get('/me', authMiddleware, async (req, res) => {
 
 const Transaction = require('../models/Transaction');
 
+const getMergedTransactions = async (userId, query = {}) => {
+    const UserTx = getVaultModel(userId, 'Transaction');
+    const baseQuery = { user: userId, ...query };
+
+    const [vaultTransactions, legacyTransactions] = await Promise.all([
+        UserTx.find(baseQuery).lean(),
+        Transaction.find(baseQuery).lean()
+    ]);
+
+    // Older payment flows wrote to the shared transactions collection,
+    // while wallet and claim flows use the per-user vault collection.
+    return [...vaultTransactions, ...legacyTransactions].sort((a, b) => {
+        const dateA = new Date(a.transactionDate || a.createdAt || 0).getTime();
+        const dateB = new Date(b.transactionDate || b.createdAt || 0).getTime();
+        return dateB - dateA;
+    });
+};
+
 // Withdraw endpoint
 router.post('/withdraw', authMiddleware, async (req, res) => {
     try {
@@ -112,7 +136,8 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
         user.upiId = upiId;
         await user.save();
 
-        const tx = new Transaction({
+        const UserTx = getVaultModel(user._id, 'Transaction');
+        const tx = new UserTx({
             user: user._id,
             type: 'wallet_withdrawal',
             amount: amount,
@@ -132,10 +157,9 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
 
 router.get('/withdrawals', authMiddleware, async (req, res) => {
     try {
-        const history = await Transaction.find({
-            user: req.user.id,
-            type: { $in: ['wallet_withdrawal', 'plan_upgrade', 'premium_payment', 'wallet_topup'] }
-        }).sort({ createdAt: -1 });
+        const history = await getMergedTransactions(req.user.id, {
+            type: { $in: ['wallet_withdrawal', 'plan_upgrade', 'premium_payment', 'wallet_topup', 'claim_payout'] }
+        });
         res.json(history);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -145,9 +169,10 @@ router.get('/withdrawals', authMiddleware, async (req, res) => {
 router.get('/transactions', authMiddleware, async (req, res) => {
     try {
         const { type } = req.query;
-        const query = { user: req.user.id };
+        const query = {};
         if (type && type !== 'all') query.type = type;
-        const history = await Transaction.find(query).sort({ createdAt: -1 });
+
+        const history = await getMergedTransactions(req.user.id, query);
         res.json(history);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -191,7 +216,8 @@ router.post('/wallet/topup', authMiddleware, async (req, res) => {
         user.walletBalance += amount;
         await user.save();
 
-        const tx = new Transaction({
+        const UserTx = getVaultModel(user._id, 'Transaction');
+        const tx = new UserTx({
             user: user._id,
             type: 'wallet_topup',
             amount,
@@ -210,13 +236,14 @@ router.post('/wallet/topup', authMiddleware, async (req, res) => {
 
 router.put('/profile', authMiddleware, async (req, res) => {
     try {
-        const { name, city, platform, averageWeeklyIncome, upiId } = req.body;
+        const { name, city, platform, platformId, averageWeeklyIncome, upiId } = req.body;
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         if (name) user.name = name;
         if (city) user.city = city;
         if (platform) user.platform = platform;
+        if (platformId) user.platformId = platformId;
         if (averageWeeklyIncome) user.averageWeeklyIncome = Number(averageWeeklyIncome);
         if (upiId !== undefined) user.upiId = upiId;
 

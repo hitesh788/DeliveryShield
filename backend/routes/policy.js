@@ -60,9 +60,17 @@ router.get('/quote', auth, async (req, res) => {
         const user = await User.findById(req.user.id);
 
         let weather = null;
+        const { lat, lon } = req.query;
+
         if (API_KEY) {
             try {
-                const pos = cityCoords[user.city] || cityCoords['Chennai'];
+                let pos;
+                if (lat && lon) {
+                    pos = { lat, lon };
+                } else {
+                    pos = cityCoords[user.city] || cityCoords['Mumbai'];
+                }
+
                 const weatherRes = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.lat}&lon=${pos.lon}&appid=${API_KEY}&units=metric`);
                 const aqiRes = await axios.get(`http://api.openweathermap.org/data/2.5/air_pollution?lat=${pos.lat}&lon=${pos.lon}&appid=${API_KEY}`);
 

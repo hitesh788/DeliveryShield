@@ -61,9 +61,8 @@ const Claims = () => {
             toast.update(toastId, { render: res.data.message, type: "success", isLoading: false, autoClose: 3000 });
             fetchClaims();
         } catch (err) {
-            const msg = err.response?.data?.message || "Claim failed";
-            const reason = err.response?.data?.reason || "";
-            toast.update(toastId, { render: `${msg}: ${reason}`, type: "error", isLoading: false, autoClose: 5000 });
+            const reason = err.response?.data?.reason || "Check disruption conditions";
+            toast.update(toastId, { render: `❌ Claim Rejected: ${reason}`, type: "error", isLoading: false, autoClose: 5000 });
         }
     };
 

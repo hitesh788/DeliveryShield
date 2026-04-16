@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote, Info, RefreshCw } from 'lucide-react';
+import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote, Info, RefreshCw, Sun, Cloud, Droplets, MapPin } from 'lucide-react';
 import { toast } from 'react-toastify';
 import './Claims.css';
 
@@ -109,7 +109,8 @@ const Dashboard = () => {
             refreshUserData();
             fetchStats();
         } catch (err) {
-            toast.update(toastId, { render: err.response?.data?.message || err.response?.data?.error || 'Claim rejected dynamically', type: "error", isLoading: false, autoClose: 5000 });
+            const reason = err.response?.data?.reason || err.response?.data?.message || err.response?.data?.error || 'Claim rejected dynamically';
+            toast.update(toastId, { render: `❌ Claim Rejected: ${reason}`, type: "error", isLoading: false, autoClose: 5000 });
         }
     };
 
@@ -228,14 +229,7 @@ const Dashboard = () => {
 
             {quote && (
                 <div className="card" style={{ marginBottom: '20px', padding: '18px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Info size={18} /> Smart Protection Insights</h3>
-                        {quote.liveWeather && (
-                            <span className="badge active" style={{ fontSize: '11px', padding: '2px 8px' }}>
-                                📡 LIVE: {quote.liveWeather.temp}°C
-                            </span>
-                        )}
-                    </div>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}><Info size={18} /> Smart Protection Insights</h3>
                     <p style={{ color: 'var(--text-light)', marginBottom: '10px' }}>Recommended plan: <strong>{quote.recommendedPlan}</strong></p>
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         {quote.explanation?.map(item => <span key={item} className="badge pending">{item}</span>)}

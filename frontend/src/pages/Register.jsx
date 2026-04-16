@@ -11,6 +11,7 @@ const initialFormData = {
     phone: '',
     password: '',
     platform: 'Zomato',
+    platformId: '',
     city: 'Mumbai',
     averageWeeklyIncome: 4000
 };
@@ -57,9 +58,11 @@ const Register = () => {
                         <select name="platform" value={formData.platform ?? initialFormData.platform} onChange={handleChange}>
                             <option value="Zomato">Zomato</option>
                             <option value="Swiggy">Swiggy</option>
-                            <option value="Amazon">Amazon</option>
+                            <option value="Blinkit">Blinkit</option>
                             <option value="Zepto">Zepto</option>
+                            <option value="Amazon">Amazon</option>
                         </select>
+                        <input type="text" name="platformId" placeholder="Platform Rider ID (e.g. ZOM-123)" value={formData.platformId ?? ''} onChange={handleChange} required />
                         <select name="city" value={formData.city ?? initialFormData.city} onChange={handleChange}>
                             <option value="Mumbai">Mumbai</option>
                             <option value="Delhi">Delhi</option>
