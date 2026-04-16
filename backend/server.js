@@ -10,13 +10,9 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
     "http://localhost:3000",
     "http://localhost:8081",
-    "http://172.16.149.138:8081",
-    "https://deliveryshield.vercel.app",
-    "https://deliveryshield-app.vercel.app"
+    "https://deliveryshield.vercel.app"
   ],
   credentials: true
 }));
