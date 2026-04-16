@@ -7,22 +7,28 @@ const mongoose = require('mongoose');
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:3000",
+  "http://localhost:8081",
+  "http://172.16.149.138:8081",
+  ... (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:3000",
-    "https://deliveryshield.vercel.app"
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
 
 app.use(express.json());
 
-// Debug logs
-console.log("🚀 Starting server...");
-console.log("MONGO_URI:", process.env.MONGO_URI ? "FOUND ✅" : "MISSING ❌");
+// Request Logger
+app.use((req, res, next) => {
+  console.log(`Incoming Request: ${req.method} ${req.url}`);
+  next();
+});
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -39,7 +45,6 @@ app.get('/', (req, res) => res.send('DeliveryShield Backend is Running..'));
 
 const PORT = process.env.PORT || 5000;
 
-// Force server to start (IMPORTANT)
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });

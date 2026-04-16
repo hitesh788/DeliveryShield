@@ -151,8 +151,10 @@ router.post('/buy', auth, async (req, res) => {
 
         await policy.save();
 
-        // Log transaction
-        const tx = new Transaction({
+        // Log transaction in User Vault
+        const { getVaultModel } = require('../utils/vault');
+        const UserTx = getVaultModel(user._id, 'Transaction');
+        const tx = new UserTx({
             user: user._id,
             type: 'premium_payment',
             amount: quote.weeklyPremium,
@@ -160,7 +162,8 @@ router.post('/buy', auth, async (req, res) => {
             planName: user.currentPlan,
             balanceAfter: user.walletBalance,
             description: `${user.currentPlan} weekly policy premium`,
-            status: 'success'
+            status: 'success',
+            transactionDate: new Date()
         });
         await tx.save();
 
@@ -208,7 +211,9 @@ router.post('/change-plan', auth, async (req, res) => {
             }
         );
 
-        const tx = new Transaction({
+        const { getVaultModel } = require('../utils/vault');
+        const UserTx = getVaultModel(user._id, 'Transaction');
+        const tx = new UserTx({
             user: user._id,
             type: 'plan_upgrade',
             amount,
@@ -216,7 +221,8 @@ router.post('/change-plan', auth, async (req, res) => {
             planName,
             balanceAfter: user.walletBalance,
             description: `${planName} plan payment via ${paymentMethod}`,
-            status: 'success'
+            status: 'success',
+            transactionDate: new Date()
         });
         await tx.save();
 

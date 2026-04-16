@@ -165,7 +165,8 @@ router.post('/auto-trigger', auth, async (req, res) => {
             amount: payout,
             balanceAfter: user.walletBalance,
             description: `${disruptionType} claim payout`,
-            status: 'success'
+            status: 'success',
+            transactionDate: new Date()
         });
 
         await tx.save();
@@ -185,8 +186,21 @@ router.post('/auto-trigger', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
     try {
         const UserClaim = getVaultModel(req.user.id, 'Claim');
-        const claims = await UserClaim.find({ user: req.user.id }).sort({ createdAt: -1 });
-        res.json(claims);
+
+        // Fetch from both Vault (per-user) and Global (shared/legacy/rejected) collections
+        const [vaultClaims, globalClaims] = await Promise.all([
+            UserClaim.find({ user: req.user.id }).lean(),
+            Claim.find({ user: req.user.id }).lean()
+        ]);
+
+        // Merge and sort by date descending
+        const allClaims = [...vaultClaims, ...globalClaims].sort((a, b) => {
+            const dateA = new Date(a.dateOfDisruption || a.createdAt || 0).getTime();
+            const dateB = new Date(b.dateOfDisruption || b.createdAt || 0).getTime();
+            return dateB - dateA;
+        });
+
+        res.json(allClaims);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

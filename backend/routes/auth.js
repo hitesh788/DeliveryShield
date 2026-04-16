@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { getVaultModel } = require('../utils/vault');
+const { sendOtpEmail } = require('../utils/email');
 const router = express.Router();
 const publicUser = (user) => ({
     id: user._id,
@@ -30,11 +31,49 @@ router.post('/register', async (req, res) => {
         email = email.trim().toLowerCase();
         phone = phone.trim();
         const existingUser = await User.findOne({ $or: [{ phone }, { email }] });
+
         if (existingUser) {
-            return res.status(400).json({ error: 'User already exists' });
+            if (existingUser.isVerified) {
+                return res.status(400).json({ error: 'User already exists and is already verified. Please login.' });
+            }
+            // If user exists but NOT verified, we will allow them to "re-register" (update OTP and try again)
+            // Or we can just tell them to go to verify page.
+            // Let's just update their info and send a new OTP.
+            const hashedPassword = await bcrypt.hash(password, 8);
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+            existingUser.name = name;
+            existingUser.password = hashedPassword;
+            existingUser.platform = platform;
+            existingUser.platformId = platformId || '';
+            existingUser.city = city;
+            existingUser.averageWeeklyIncome = averageWeeklyIncome;
+            existingUser.otp = otp;
+            existingUser.otpExpires = otpExpires;
+
+            console.log(`🔑 DEBUG OTP (update) for ${email}: ${otp}`);
+
+            await existingUser.save();
+
+            // Send OTP in background - INSTANT RESPONSE
+            sendOtpEmail(email, otp, name).catch(mailErr => {
+                console.error("Background Mail Send Error (Re-register):", mailErr);
+            });
+
+            return res.status(201).json({
+                message: 'Account exists but was unverified. A new OTP has been sent.',
+                email,
+                allowOtpInResponse: process.env.ALLOW_OTP_IN_RESPONSE === 'true' ? otp : undefined
+            });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 8);
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
         const user = new User({
             name,
             email,
@@ -43,14 +82,25 @@ router.post('/register', async (req, res) => {
             platform,
             platformId: platformId || '',
             city,
-            averageWeeklyIncome
+            averageWeeklyIncome,
+            isVerified: false,
+            otp,
+            otpExpires
         });
+
+        console.log(`🔑 DEBUG OTP for ${email}: ${otp}`);
 
         await user.save();
 
+        // Send OTP in background - INSTANT RESPONSE
+        sendOtpEmail(email, otp, name).catch(mailErr => {
+            console.error("Background Mail Send Error:", mailErr);
+        });
+
         res.status(201).json({
-            message: 'Registration successful. You can now login.',
-            email
+            message: 'Registration successful. Please verify your email with the OTP sent.',
+            email,
+            allowOtpInResponse: process.env.ALLOW_OTP_IN_RESPONSE === 'true' ? otp : undefined
         });
     } catch (err) {
         console.error("Register Error:", err);
@@ -61,6 +111,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         let { phone, email, password } = req.body;
+        console.log(`📡 Login Attempt - Email: ${email}, Phone: ${phone}`);
 
         let user;
         if (phone) {
@@ -70,21 +121,112 @@ router.post('/login', async (req, res) => {
             email = email.trim().toLowerCase();
             user = await User.findOne({ email });
         } else {
+            console.log("❌ Login failed: Both email and phone are missing in body");
             return res.status(400).json({ error: 'Phone or Email and password are required' });
         }
 
         if (!password) {
+            console.log("❌ Login failed: Password missing");
             return res.status(400).json({ error: 'Phone or Email and password are required' });
         }
 
-        if (!user) return res.status(400).json({ error: 'User not found' });
+        if (!user) {
+            console.log(`❌ Login failed: User not found for ${email || phone}`);
+            return res.status(400).json({ error: 'User not found' });
+        }
         if (user.role === 'admin') return res.status(403).json({ error: 'Please use admin login' });
+
+        // Check if user is verified
+        if (!user.isVerified) {
+            return res.status(403).json({
+                error: 'Account not verified. Please verify your email.',
+                unverified: true,
+                email: user.email
+            });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
         const token = jwt.sign({ id: user._id, role: user.role, city: user.city }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: publicUser(user) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Verify OTP Route
+router.post('/verify-otp', async (req, res) => {
+    try {
+        let { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ error: 'Email and OTP are required' });
+        }
+
+        email = email.trim().toLowerCase();
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(400).json({ error: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ error: 'User is already verified' });
+        }
+
+        // Check OTP and Expiry
+        if (user.otp !== otp) {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
+
+        if (user.otpExpires < new Date()) {
+            return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+        }
+
+        // Mark as verified
+        user.isVerified = true;
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+
+        res.json({ message: 'Email verified successfully. You can now login.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Resend OTP Route
+router.post('/resend-otp', async (req, res) => {
+    try {
+        let { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        email = email.trim().toLowerCase();
+        const user = await User.findOne({ email });
+
+        if (!user) return res.status(400).json({ error: 'User not found' });
+        if (user.isVerified) return res.status(400).json({ error: 'User already verified' });
+
+        // Generate new OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+
+        console.log(`🔑 DEBUG OTP (resend) for ${email}: ${otp}`);
+
+        await user.save();
+
+        // Send Email in background - INSTANT RESPONSE
+        sendOtpEmail(user.email, otp, user.name).catch(mailErr => {
+            console.error("Background Resend Mail Error:", mailErr);
+        });
+
+        res.json({
+            message: 'A new OTP has been sent to your email.',
+            allowOtpInResponse: process.env.ALLOW_OTP_IN_RESPONSE === 'true' ? otp : undefined
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -145,7 +287,8 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
             paymentMethod: 'wallet',
             balanceAfter: user.walletBalance,
             description: `Wallet withdrawal to ${upiId}`,
-            status: 'success'
+            status: 'success',
+            transactionDate: new Date()
         });
         await tx.save();
 
@@ -216,15 +359,16 @@ router.post('/wallet/topup', authMiddleware, async (req, res) => {
         user.walletBalance += amount;
         await user.save();
 
-        const UserTx = getVaultModel(user._id, 'Transaction');
+        const UserTx = getVaultModel(req.user.id, 'Transaction');
         const tx = new UserTx({
-            user: user._id,
+            user: req.user.id,
             type: 'wallet_topup',
-            amount,
+            amount: amount,
             paymentMethod: 'razorpay',
             balanceAfter: user.walletBalance,
-            description: 'Wallet top-up via simulated Razorpay',
-            status: 'success'
+            description: 'Wallet top-up via Razorpay',
+            status: 'success',
+            transactionDate: new Date()
         });
         await tx.save();
 

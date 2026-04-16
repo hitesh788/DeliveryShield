@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import Register from './pages/Register';
+import VerifyOTP from './pages/VerifyOTP';
 import Dashboard from './pages/Dashboard';
 import BuyPolicy from './pages/BuyPolicy';
 import Claims from './pages/Claims';
@@ -36,6 +37,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/admin-login" element={<AdminLogin />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/verify-otp" element={<VerifyOTP />} />
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                     <Route path="/buy-policy" element={<ProtectedRoute><BuyPolicy /></ProtectedRoute>} />
                     <Route path="/claims" element={<ProtectedRoute><Claims /></ProtectedRoute>} />

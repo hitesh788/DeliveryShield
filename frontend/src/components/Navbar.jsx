@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Shield, LogOut, HeartPulse } from 'lucide-react';
+import { MapPin, Shield, LogOut, HeartPulse, User as UserIcon } from 'lucide-react';
 import axios from 'axios';
 
 const Navbar = () => {
@@ -11,7 +11,6 @@ const Navbar = () => {
     const [digitalHealth, setDigitalHealth] = useState({ label: 'Excellent', color: '#10B981' });
     const [storedPlan, setStoredPlan] = useState(localStorage.getItem('userPlan') || 'BASIC PLAN');
 
-    // Dynamic logic for the Title Tag (Beta, Pro, Elite, Basic)
     let planBadge = user?.role === 'admin' ? 'ADMIN' : 'BASIC';
     if (user?.role !== 'admin') {
         if (storedPlan === 'BETA PLAN') planBadge = 'BETA';
@@ -47,7 +46,6 @@ const Navbar = () => {
             );
         }
 
-        // Fetch Claims History to calculate Digital Health Fraud Metric
         const fetchHealthScore = async () => {
             try {
                 const res = await axios.get(`http://localhost:5000/api/claim`, { headers: { Authorization: `Bearer ${token}` } });
@@ -99,7 +97,9 @@ const Navbar = () => {
                         <Link to="/dashboard" className="nav-item">Dashboard</Link>
                         <Link to="/withdrawals" className="nav-item">Payout History</Link>
                         <Link to="/claims" className="nav-item">All Claims</Link>
-                        <Link to="/profile" className="nav-item">Profile</Link>
+                        <Link to="/profile" className="nav-item" title="My Profile" style={{ display: 'flex', alignItems: 'center', padding: '5px' }}>
+                            <UserIcon size={24} strokeWidth={2} />
+                        </Link>
                     </>
                 )}
                 <button onClick={handleLogout} className="btn-logout"><LogOut size={16} /> Logout</button>

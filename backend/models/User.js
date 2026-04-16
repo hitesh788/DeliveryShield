@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
-
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String, default: null },
+    otpExpires: { type: Date, default: null },
     role: { type: String, enum: ['worker', 'admin'], default: 'worker' },
     platform: { type: String, enum: ['Zomato', 'Swiggy', 'Blinkit', 'Zepto', 'Amazon', 'Other'], required: true },
     platformId: { type: String, default: '' }, // Unique ID from delivery app

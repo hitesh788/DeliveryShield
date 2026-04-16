@@ -1,65 +1,116 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = Platform.OS === 'web' ? 'http://localhost:5000/api' : 'http://10.0.2.2:5000/api';
+import API_URL from '../utils/api';
 
 const LoginScreen = ({ navigation }) => {
-    const [phone, setPhone] = useState('1234567890');
-    const [password, setPassword] = useState('password');
+    const [loginId, setLoginId] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
+        const identifier = loginId.trim();
+        const secret = password.trim();
+
+        if (!identifier || !secret) {
+            return Alert.alert('Credentials Required', 'Please enter your identity and secret');
+        }
+
+        const payload = { password: secret };
+        if (identifier.includes('@')) {
+            payload.email = identifier.toLowerCase();
+        } else {
+            payload.phone = identifier;
+        }
+
+        setLoading(true);
         try {
-            // For local testing on actual device, replace 10.0.2.2 with your WiFi IP
-            const res = await axios.post(`${API_URL}/auth/login`, { phone, password });
+            const res = await axios.post(`${API_URL}/auth/login`, payload);
+
+            if (res.data.user.role === 'admin') {
+                Alert.alert('Access Denied', 'Please use the Admin Portal for administrative access.');
+                setLoading(false);
+                return;
+            }
+
             await AsyncStorage.setItem('token', res.data.token);
             await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
+
+            // Sync current plan if available
+            if (res.data.user.currentPlan) {
+                await AsyncStorage.setItem('userPlan', res.data.user.currentPlan);
+            }
+
             navigation.replace('Dashboard');
         } catch (err) {
-            Alert.alert('Error', 'Invalid credentials or server not found. Ensure backend is running.');
+            if (err.response?.status === 403 && err.response?.data?.unverified) {
+                Alert.alert('Verification Required', 'Your account is pending synchronization.');
+                navigation.navigate('VerifyOTP', { identifier, isLogin: true });
+            } else {
+                Alert.alert('Login Failed', err.response?.data?.error || 'Invalid credentials or network interruption');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>DeliveryShield</Text>
+            <View style={styles.logoContainer}>
+                <Text style={styles.logoText}>🛡️ DeliveryShield</Text>
+                <Text style={styles.tagline}>Smart Parametric Insurance Hub</Text>
+            </View>
+
             <View style={styles.card}>
-                <Text style={styles.subtitle}>Login</Text>
+                <Text style={styles.title}>Secure Login</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Phone Number"
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
+                    placeholder="Email Address or Phone"
+                    value={loginId}
+                    onChangeText={setLoginId}
+                    autoCapitalize="none"
+                    keyboardType="default"
                 />
                 <TextInput
                     style={styles.input}
-                    placeholder="Password"
+                    placeholder="Secure Password"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                 />
-                <TouchableOpacity style={styles.btnPrimary} onPress={handleLogin}>
-                    <Text style={styles.btnText}>Login</Text>
+                <TouchableOpacity style={styles.btnPrimary} onPress={handleLogin} disabled={loading}>
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>ENTER DASHBOARD</Text>}
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{ marginTop: 15 }}>
-                    <Text style={styles.linkText}>Don't have an account? Register</Text>
+
+                <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{ marginTop: 25 }}>
+                    <Text style={styles.linkText}>New rider? <Text style={{ color: '#3B82F6' }}>Create secure profile</Text></Text>
                 </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+                style={styles.adminLink}
+                onPress={() => navigation.navigate('AdminLogin')}
+            >
+                <Text style={styles.adminText}>⚙️ Enterprise Admin Portal</Text>
+            </TouchableOpacity>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-    title: { fontSize: 32, fontWeight: '800', color: '#1E3A8A', marginBottom: 20 },
-    card: { width: '85%', backgroundColor: '#fff', padding: 25, borderRadius: 16, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6 },
-    subtitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#0F172A' },
-    input: { borderWidth: 1, borderColor: '#CBD5E1', padding: 14, borderRadius: 8, marginBottom: 15, backgroundColor: '#F1F5F9' },
-    btnPrimary: { backgroundColor: '#1E3A8A', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-    btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    linkText: { color: '#3B82F6', textAlign: 'center', fontWeight: '600' }
+    container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#EFF6FF' },
+    logoContainer: { alignItems: 'center', marginBottom: 50 },
+    logoText: { fontSize: 36, fontWeight: '900', color: '#1E3A8A' },
+    tagline: { fontSize: 13, color: '#64748B', marginTop: 8, letterSpacing: 1, fontWeight: '600' },
+    card: { width: '85%', backgroundColor: '#fff', padding: 35, borderRadius: 30, elevation: 15, shadowColor: '#1E3A8A', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
+    title: { fontSize: 22, fontWeight: '900', marginBottom: 30, color: '#0F172A', textAlign: 'center' },
+    input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 15, marginBottom: 18, fontSize: 15, color: '#1E293B' },
+    btnPrimary: { backgroundColor: '#1E3A8A', padding: 18, borderRadius: 15, alignItems: 'center', elevation: 5 },
+    btnText: { color: '#fff', fontWeight: '900', fontSize: 15, letterSpacing: 1.5 },
+    linkText: { color: '#64748B', textAlign: 'center', fontWeight: '700', fontSize: 14 },
+    adminLink: { position: 'absolute', bottom: 50 },
+    adminText: { color: '#94A3B8', fontSize: 13, fontWeight: 'bold', textDecorationLine: 'underline' }
 });
 
 export default LoginScreen;

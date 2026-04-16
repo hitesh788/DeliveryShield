@@ -27,7 +27,14 @@ const Login = () => {
             toast.success('Login successful');
             navigate('/dashboard');
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Login failed');
+            const errorMsg = err.response?.data?.error || 'Login failed';
+
+            if (err.response?.status === 403 && err.response?.data?.unverified) {
+                toast.info('Please verify your email before logging in.');
+                navigate(`/verify-otp?email=${encodeURIComponent(err.response.data.email)}`);
+            } else {
+                toast.error(errorMsg);
+            }
         }
     };
 
