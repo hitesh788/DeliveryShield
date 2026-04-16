@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Shield, LogOut, HeartPulse, User as UserIcon } from 'lucide-react';
 import axios from 'axios';
+import API_URL from '../config';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -48,7 +49,7 @@ const Navbar = () => {
 
         const fetchHealthScore = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/claim`, { headers: { Authorization: `Bearer ${token}` } });
+                const res = await axios.get(`${API_URL}/claim`, { headers: { Authorization: `Bearer ${token}` } });
                 const rejectedCount = res.data.filter(c => c.isFraudulent).length;
                 if (rejectedCount === 0) setDigitalHealth({ label: 'Excellent', color: '#10B981' });
                 else if (rejectedCount <= 1) setDigitalHealth({ label: 'Average', color: '#F59E0B' });
