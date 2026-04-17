@@ -56,8 +56,26 @@ router.get('/stats', auth, adminOnly, async (req, res) => {
 
 router.get('/users', auth, adminOnly, async (req, res) => {
     try {
-        const users = await User.find({}, '-password').sort({ createdAt: -1 });
-        res.json(users);
+        const users = await User.find({ role: 'worker', isRemoved: false }, '-password').sort({ createdAt: -1 });
+        const removedUsers = await User.find({ isRemoved: true }, '-password').sort({ removedAt: -1 });
+        res.json({ users, removedUsers });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/users/:id', auth, adminOnly, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (user.role === 'admin') return res.status(400).json({ error: 'Cannot remove an admin' });
+
+        user.isRemoved = true;
+        user.removalReason = req.body.reason || 'Violation of terms';
+        user.removedAt = new Date();
+        await user.save();
+
+        res.json({ message: 'User removed successfully', user });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

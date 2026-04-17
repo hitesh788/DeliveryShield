@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema({
     upiId: { type: String, default: '' },
     autoRenew: { type: Boolean, default: false },
     walletBalance: { type: Number, default: 0 },
-    needsPasswordChange: { type: Boolean, default: false }
+    needsPasswordChange: { type: Boolean, default: false },
+    isRemoved: { type: Boolean, default: false },
+    removalReason: { type: String, default: '' },
+    removedAt: { type: Date, default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
