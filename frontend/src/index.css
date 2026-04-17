@@ -114,6 +114,27 @@ body {
   color: var(--primary-light);
 }
 
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .nav-location {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
 .btn {
   padding: 12px 24px;
   border-radius: var(--radius-md);

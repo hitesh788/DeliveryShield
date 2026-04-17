@@ -1,16 +1,29 @@
 {
-    "expo": {
-        "name": "DeliveryShield",
-        "slug": "deliveryshield",
-        "version": "1.0.0",
-        "sdkVersion": "54.0.0",
-        "platforms": [
-            "ios",
-            "android",
-            "web"
-        ],
-        "assetBundlePatterns": [
-            "**/*"
-        ]
+  "expo": {
+    "name": "DeliveryShield",
+    "slug": "deliveryshield",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "icon": "./assets/icon.png",
+    "extra": {
+      "eas": {
+        "projectId": "501e74bf-73ba-44b9-b452-3cdc85509230"
+      }
+    },
+    "android": {
+      "package": "com.softgrid.deliveryshield",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      }
     }
+  }
 }
