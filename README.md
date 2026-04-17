@@ -179,32 +179,6 @@ DeliveryShield/
  ├── README.md
 ```
 
----
-
-## 🔗 API Endpoints
-
-### Auth
-
-* POST /auth/register
-* POST /auth/login
-
-### Policy
-
-* POST /policy/create
-* GET /policy/view
-
-### Claims
-
-* GET /claim/auto-trigger
-* GET /claim/history
-
-### Admin
-
-* GET /admin/users
-* GET /admin/analytics
-
----
-
 ## 🔁 Demo Scenario
 
 ### Example Use Case
@@ -299,7 +273,7 @@ OPENWEATHER_API_KEY=your_api_key
 
 * 🔮 Advanced ML-based fraud prediction
 * 📡 Live GPS tracking
-* 🔗 Integration with delivery platforms (Swiggy, Zomato)
+* 🔗 Integration with delivery platforms (Swiggy, Zomato), for now it is simulated only
 * 🔊 Voice-based emergency alerts
 * 🧠 AI chatbot for assistance
 
@@ -333,6 +307,15 @@ This project is created for educational and hackathon purposes.
 * Open-source community
 * Hackathon organizers
 * Cybersecurity & AI research resources
+
+---
+
+## 🏢 About the Creator
+
+This project was built and published under my personal brand, **Softgrid Technologies**. It is an independent, complete project created for professional development and hackathons.
+
+* 🌐 **Website:** [softgridtechnologies.site](https://softgridtechnologies.site)
+* ✉️ **Contact:** softgridtechnologies@gmail.com
 
 ---
 
