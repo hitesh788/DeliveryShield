@@ -4,7 +4,7 @@ console.log("📑 Loading Claim Model Schema...");
 const claimSchema = new mongoose.Schema({
     policy: { type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    disruptionType: { type: String, enum: ['Heavy Rain', 'Extreme Heat', 'Pollution', 'Curfew'], required: true },
+    disruptionType: { type: String, enum: ['Heavy Rain', 'Extreme Heat', 'Pollution'], required: true },
     dateOfDisruption: { type: Date, required: true },
     amountPayout: { type: Number, required: true },
     status: { type: String, enum: ['approved', 'auto-approved', 'processing', 'rejected'], default: 'approved' },

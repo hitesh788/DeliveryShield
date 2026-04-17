@@ -4,7 +4,7 @@
 
 **DeliveryShield** is an AI-driven parametric insurance platform designed for India’s gig economy workers such as delivery partners from Zomato, Swiggy, Amazon, and similar platforms.
 
-The platform provides **automated income protection** against external disruptions like **extreme weather, pollution, and curfews**, ensuring that gig workers do not lose their earnings due to uncontrollable conditions.
+The platform provides **automated income protection** against external disruptions like **extreme weather and pollution**, ensuring that gig workers do not lose their earnings due to uncontrollable conditions.
 
 Unlike traditional insurance, DeliveryShield uses **parametric triggers + AI models** to enable **instant claim processing and payouts without manual intervention**.
 
@@ -17,7 +17,7 @@ Gig workers often lose **20–30% of their income** due to:
 * 🌧 Heavy rain or floods
 * 🌡 Extreme heat
 * 🌫 High pollution
-* 🚫 Curfews or strikes
+* 🚫 City-wide strikes
 
 Currently, there is **no reliable income protection system**, forcing workers to bear financial losses alone.
 
@@ -116,7 +116,6 @@ Automatically detects:
 * 🌧 Heavy Rain
 * 🌡 Extreme Heat
 * 🌫 Pollution
-* 🚫 Curfew (mock data)
 
 ---
 

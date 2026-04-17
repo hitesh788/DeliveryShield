@@ -47,7 +47,7 @@ const BuyPolicy = () => {
                     <ul className="features">
                         <li>✅ Loss of Income Protection</li>
                         <li>✅ Covers up to ₹{quote.incomeCovered} per week</li>
-                        <li>✅ Weather & Curfew Disruptions</li>
+                        <li>✅ Weather & Pollution Disruptions</li>
                         <li>✅ Fully Automated Zero-Touch Claims</li>
                     </ul>
                     <p className="risk-text">AI Risk Multiplier: {quote.riskFactor}x (Based on your location)</p>

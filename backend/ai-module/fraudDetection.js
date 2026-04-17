@@ -18,7 +18,7 @@ exports.calculateFraudScore = (user, claimDetails) => {
         score += 50;
     }
 
-    // Rule 2: GPS Location mismatch (Mock: User registered in Mumbai but claiming curfew in Delhi)
+    // Rule 2: GPS Location mismatch (Mock: User registered in Mumbai but claiming disruption in Delhi)
     if (Math.random() > 0.95) {
         score += 40;
     }

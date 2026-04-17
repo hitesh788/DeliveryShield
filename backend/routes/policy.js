@@ -43,14 +43,14 @@ const PLAN_DETAILS = {
         coverageBoost: 1.25,
         claimLimit: 4,
         payoutSpeed: 'Priority',
-        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution', 'Curfew']
+        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution']
     },
     'ELITE CORP': {
         price: 150,
         coverageBoost: 1.5,
         claimLimit: 10,
         payoutSpeed: 'Instant',
-        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution', 'Curfew']
+        coveredDisruptions: ['Heavy Rain', 'Extreme Heat', 'Pollution']
     }
 };
 
