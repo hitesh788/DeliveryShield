@@ -24,6 +24,13 @@
         "foregroundImage": "./assets/deliveryshield_icon.jpg",
         "backgroundColor": "#ffffff"
       }
-    }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/501e74bf-73ba-44b9-b452-3cdc85509230"
+    },
+    "ios": {}
   }
 }

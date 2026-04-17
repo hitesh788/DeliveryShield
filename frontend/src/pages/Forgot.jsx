@@ -20,7 +20,10 @@ const Forgot = () => {
                 navigate('/login');
             }, 3000);
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Unable to reset password. Check if your email is registered.');
+            console.error("Forgot password error:", err);
+            const serverError = err.response?.data?.error;
+            const networkError = err.message;
+            toast.error(serverError || `Connection failed: ${networkError}. Please check if the backend is deployed correctly.`);
         } finally {
             setLoading(false);
         }
