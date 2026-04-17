@@ -84,3 +84,50 @@
     color: #10B981;
     font-weight: 600;
 }
+
+/* Admin Dashboard Responsive Classes */
+.admin-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.admin-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.admin-nav-search {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-tab-group {
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 992px) {
+    .admin-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .admin-grid-2 {
+        grid-template-columns: 1fr;
+    }
+    .admin-nav-search {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    .admin-tab-group {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}

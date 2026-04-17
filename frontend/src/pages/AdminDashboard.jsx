@@ -75,7 +75,7 @@ const AdminDashboard = () => {
     return (
         <div style={{ background: '#0F172A', minHeight: '100vh', color: '#F8FAFC', paddingBottom: '40px' }}>
             {/* Enterprise Top Navbar */}
-            <div style={{ background: '#1E293B', padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', position: 'sticky', top: 0, zIndex: 100 }}>
+            <div className="admin-nav-search" style={{ background: '#1E293B', padding: '15px 30px', borderBottom: '1px solid #334155', position: 'sticky', top: 0, zIndex: 100 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <ShieldAlert color="#3B82F6" size={28} />
                     <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '800', letterSpacing: '1px' }}>DeliveryShield <span style={{ color: '#3B82F6' }}>Command Center</span></h2>
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
             <div style={{ padding: '30px', maxWidth: '1400px', margin: '0 auto' }}>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '1px solid #334155', paddingBottom: '15px' }}>
+                <div className="admin-tab-group" style={{ marginBottom: '30px', borderBottom: '1px solid #334155', paddingBottom: '15px' }}>
                     <button onClick={() => setTab('overview')} style={{ padding: '10px 20px', background: tab === 'overview' ? '#3B82F6' : 'transparent', color: tab === 'overview' ? 'white' : '#94A3B8', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <BarChart3 size={18} /> Overview
                     </button>
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
                 {/* OVERVIEW TAB */}
                 {tab === 'overview' && (
                     <>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '30px' }}>
+                        <div className="admin-grid-4" style={{ marginBottom: '30px' }}>
                             <div style={{ background: '#1E293B', padding: '25px', borderRadius: '15px', borderLeft: '4px solid #3B82F6' }}>
                                 <div style={{ color: '#94A3B8', fontSize: '0.9rem', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '10px' }}>Total Workers</div>
                                 <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{stats.totalUsers}</div>
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div className="admin-grid-2" style={{ marginBottom: '30px' }}>
                             <div style={{ background: '#1E293B', padding: '25px', borderRadius: '15px' }}>
                                 <h3 style={{ borderBottom: '1px solid #334155', paddingBottom: '15px', marginBottom: '15px' }}>Geographic Risk Matrix</h3>
                                 <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
