@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Shield, LogOut, HeartPulse, User as UserIcon } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import API_URL from '../config';
 
 const Navbar = () => {
@@ -65,10 +66,12 @@ const Navbar = () => {
     }, [token]);
 
     const handleLogout = () => {
+        const isAdmin = user?.role === 'admin';
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userPlan');
-        navigate(user?.role === 'admin' ? '/admin-login' : '/login');
+        toast.info(isAdmin ? 'Admin logged out securely' : 'Logged out securely');
+        navigate(isAdmin ? '/admin-login' : '/login');
     };
 
     if (!token) return null;

@@ -334,8 +334,8 @@ const Profile = () => {
                         color: 'white',
                         background: 'linear-gradient(to bottom, #1e293b, #0f172a)'
                     }}>
-                        <h4 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Premium Support</h4>
-                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px' }}>Elite & Pro riders get 24/7 priority assistance.</p>
+                        <h4 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Help & Support</h4>
+                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px' }}>All riders get 24/7 priority assistance for coverage or payout issues.</p>
                         <a
                             href="https://mail.google.com/mail/?view=cm&fs=1&to=softgridtechnologies@gmail.com&su=Priority Support&body=Rider ID: "
                             target="_blank"

@@ -34,6 +34,11 @@ const DashboardScreen = ({ navigation }) => {
     const [payoutAmount, setPayoutAmount] = useState('');
     const [topUpAmount, setTopUpAmount] = useState('');
 
+    // Password Change States
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+
     useEffect(() => {
         loadAllData();
     }, []);
@@ -144,8 +149,82 @@ const DashboardScreen = ({ navigation }) => {
         } catch (e) { Alert.alert('Error', e.response?.data?.error || 'Upgrade failed'); }
     };
 
+    const handleChangePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) return Alert.alert('Error', 'All fields are required');
+        if (newPassword !== confirmPassword) return Alert.alert('Error', 'New passwords do not match');
+        if (newPassword.length < 6) return Alert.alert('Error', 'Password must be at least 6 characters');
+
+        try {
+            setLoadingMsg('Updating password...');
+            const token = await AsyncStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/auth/change-password`, {
+                currentPassword,
+                newPassword
+            }, { headers: { Authorization: `Bearer ${token}` } });
+
+            setLoadingMsg('');
+            Alert.alert('Success', res.data.message || 'Password updated successfully');
+
+            // Update local state and storage
+            const updatedUser = { ...user, needsPasswordChange: false };
+            setUser(updatedUser);
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+
+            // Clear fields
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (e) {
+            setLoadingMsg('');
+            Alert.alert('Update Failed', e.response?.data?.error || 'Failed to update password');
+        }
+    };
+
     return (
         <ScrollView style={styles.container}>
+            {/* Force Password Change Modal */}
+            <Modal visible={user?.needsPasswordChange || false} animationType="fade" transparent={true}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: '#fff', padding: 25, borderRadius: 20, elevation: 10 }}>
+                        <Text style={{ fontSize: 22, fontWeight: '900', color: '#1E3A8A', marginBottom: 10, textAlign: 'center' }}>Update Required</Text>
+                        <Text style={{ fontSize: 13, color: '#64748B', marginBottom: 20, textAlign: 'center' }}>
+                            You are logged in with a temporary recovery password. Please create a new secure password to continue.
+                        </Text>
+
+                        <Text style={{ fontWeight: 'bold', color: '#4b5563', marginBottom: 5, fontSize: 13 }}>Recovery password:</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter current recovery password"
+                            value={currentPassword}
+                            onChangeText={setCurrentPassword}
+                            autoCapitalize="none"
+                        />
+
+                        <Text style={{ fontWeight: 'bold', color: '#4b5563', marginBottom: 5, fontSize: 13 }}>New password:</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter new secure password"
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                            secureTextEntry
+                        />
+
+                        <Text style={{ fontWeight: 'bold', color: '#4b5563', marginBottom: 5, fontSize: 13 }}>Re-enter new password:</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Re-enter new password"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry
+                        />
+
+                        <TouchableOpacity style={[styles.btnPrimary, { marginTop: 10 }]} onPress={handleChangePassword}>
+                            <Text style={styles.whiteText}>Set New Password</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             {/* --- MODALS --- */}
             {/* Menu Modal */}
             <Modal visible={showMenu} animationType="slide" transparent={true}>
@@ -227,6 +306,81 @@ const DashboardScreen = ({ navigation }) => {
                 </View>
             </Modal>
 
+            {/* Details Modal */}
+            <Modal visible={showDetailsModal} animationType="slide" transparent={true}>
+                <View style={styles.modalOverlay}>
+                    <ScrollView contentContainerStyle={styles.detailsContainer} showsVerticalScrollIndicator={false}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={styles.detailsHeaderTitle}>🛡️ Active Policy Details</Text>
+                        </View>
+
+                        <View style={styles.detailsHero}>
+                            <Text style={styles.detailsEyebrow}>Current Protection Level</Text>
+                            <Text style={styles.detailsHeroTitle}>{policy?.planName || user?.currentPlan}</Text>
+                            <Text style={styles.detailsHeroSub}>
+                                Coverage Window: {policy ? new Date(policy.startDate).toLocaleDateString() : ''} to {policy ? new Date(policy.endDate).toLocaleDateString() : ''}
+                            </Text>
+                            <View style={[styles.detailsChip, policy?.autoRenew ? styles.detailsChipEnabled : styles.detailsChipDisabled]}>
+                                <Text style={policy?.autoRenew ? styles.detailsChipTextEnabled : styles.detailsChipTextDisabled}>
+                                    Auto-renew {policy?.autoRenew ? 'Enabled' : 'Disabled'}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.detailsGrid}>
+                            <View style={[styles.detailBox, { borderTopColor: '#3b82f6' }]}>
+                                <Text style={styles.detailBoxLabel}>Start Date</Text>
+                                <Text style={styles.detailBoxValue}>{policy ? new Date(policy.startDate).toLocaleDateString() : ''}</Text>
+                            </View>
+                            <View style={[styles.detailBox, { borderTopColor: '#8b5cf6' }]}>
+                                <Text style={styles.detailBoxLabel}>End Date</Text>
+                                <Text style={styles.detailBoxValue}>{policy ? new Date(policy.endDate).toLocaleDateString() : ''}</Text>
+                            </View>
+                            <View style={[styles.detailBox, { borderTopColor: '#10b981' }]}>
+                                <Text style={styles.detailBoxLabel}>Weekly Premium</Text>
+                                <Text style={styles.detailBoxValue}>₹{policy?.weeklyPremium}</Text>
+                            </View>
+                            <View style={[styles.detailBox, { borderTopColor: '#f59e0b' }]}>
+                                <Text style={styles.detailBoxLabel}>Income Covered</Text>
+                                <Text style={styles.detailBoxValue}>₹{policy?.incomeCovered}</Text>
+                            </View>
+                            <View style={[styles.detailBox, { borderTopColor: '#64748b' }]}>
+                                <Text style={styles.detailBoxLabel}>Risk Factor</Text>
+                                <Text style={styles.detailBoxValue}>{policy?.riskFactor}x</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.disruptionsPanel}>
+                            <View style={styles.disruptionsHeader}>
+                                <Text style={styles.disruptionsTitle}>Covered Disruptions</Text>
+                                <View style={styles.disruptionsCountBadge}>
+                                    <Text style={styles.disruptionsCountText}>{(policy?.coveredDisruptions || []).length || 1} Protections Active</Text>
+                                </View>
+                            </View>
+                            <View style={styles.disruptionsList}>
+                                {((policy?.coveredDisruptions && policy.coveredDisruptions.length > 0)
+                                    ? policy.coveredDisruptions
+                                    : ['Standard Coverage']
+                                ).map((item) => (
+                                    <View key={item} style={styles.disruptionBadge}>
+                                        <Text style={styles.disruptionBadgeText}>
+                                            {item === 'Heavy Rain' && '🌧️ '}
+                                            {item === 'Extreme Heat' && '🌡️ '}
+                                            {item === 'Pollution' && '🌫️ '}
+                                            {item}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+
+                        <TouchableOpacity style={[styles.btnSecondary, { marginTop: 20, backgroundColor: 'rgba(255,255,255,0.1)' }]} onPress={() => setShowDetailsModal(false)}>
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Overview</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </Modal>
+
             {/* --- DASHBOARD UI --- */}
             <View style={styles.header}>
                 <View>
@@ -288,6 +442,9 @@ const DashboardScreen = ({ navigation }) => {
                         <Text style={styles.policyInfo}>Weekly Coverage: ₹{policy.incomeCovered}</Text>
                         <TouchableOpacity style={styles.upgradeBtn} onPress={() => setShowUpgradeModal(true)}>
                             <Text style={styles.upgradeBtnText}>UPGRADE PROTECTION 🚀</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.btnSecondary, { marginTop: 10, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' }]} onPress={() => setShowDetailsModal(true)}>
+                            <Text style={{ color: '#1D4ED8', fontWeight: 'bold', textAlign: 'center' }}>View Policy Details</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -390,7 +547,31 @@ const styles = StyleSheet.create({
     planPrice: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginVertical: 5 },
     planBrief: { fontSize: 11, color: '#64748B' },
     paymentSection: { backgroundColor: '#F8FAFC', padding: 20, borderRadius: 20, marginBottom: 15, borderStyle: 'dashed', borderWidth: 1, borderColor: '#CBD5E1' },
-    paymentTitle: { fontWeight: '800', color: '#1E3A8A', marginBottom: 15 }
+    paymentTitle: { fontWeight: '800', color: '#1E3A8A', marginBottom: 15 },
+
+    detailsContainer: { backgroundColor: '#0F172A', borderRadius: 25, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', maxHeight: '90%' },
+    detailsHeaderTitle: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+    detailsHero: { backgroundColor: '#1D4ED8', padding: 20, borderRadius: 20, marginBottom: 20 },
+    detailsEyebrow: { color: '#BFDBFE', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 5 },
+    detailsHeroTitle: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 5 },
+    detailsHeroSub: { color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 12 },
+    detailsChip: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+    detailsChipEnabled: { backgroundColor: 'rgba(16,185,129,0.3)', borderColor: 'rgba(16,185,129,0.5)' },
+    detailsChipDisabled: { backgroundColor: 'rgba(239,68,68,0.3)', borderColor: 'rgba(239,68,68,0.5)' },
+    detailsChipTextEnabled: { color: '#D1FAE5', fontSize: 12, fontWeight: 'bold' },
+    detailsChipTextDisabled: { color: '#FEE2E2', fontSize: 12, fontWeight: 'bold' },
+    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
+    detailBox: { width: '48%', backgroundColor: '#1E293B', padding: 15, borderRadius: 15, marginBottom: 15, borderTopWidth: 3 },
+    detailBoxLabel: { color: '#94A3B8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', marginBottom: 5 },
+    detailBoxValue: { color: '#F8FAFC', fontSize: 18, fontWeight: 'bold' },
+    disruptionsPanel: { backgroundColor: '#1E293B', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(59,130,246,0.3)' },
+    disruptionsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+    disruptionsTitle: { color: '#60A5FA', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' },
+    disruptionsCountBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
+    disruptionsCountText: { color: '#E2E8F0', fontSize: 11, fontWeight: 'bold' },
+    disruptionsList: { flexDirection: 'row', flexWrap: 'wrap' },
+    disruptionBadge: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', marginRight: 8, marginBottom: 8 },
+    disruptionBadgeText: { color: '#F8FAFC', fontWeight: 'bold', fontSize: 13 }
 });
 
 export default DashboardScreen;

@@ -21,7 +21,8 @@ const publicUser = (user) => ({
     walletBalance: user.walletBalance,
     currentPlan: user.currentPlan,
     upiId: user.upiId,
-    autoRenew: user.autoRenew
+    autoRenew: user.autoRenew,
+    needsPasswordChange: user.needsPasswordChange
 });
 
 router.post('/register', async (req, res) => {
@@ -248,6 +249,7 @@ router.post('/forgot-password', async (req, res) => {
         const hashedPassword = await bcrypt.hash(tempPassword, 8);
 
         user.password = hashedPassword;
+        user.needsPasswordChange = true;
         await user.save();
 
         // Send email
@@ -255,13 +257,36 @@ router.post('/forgot-password', async (req, res) => {
             console.error("Background Password Mail Error:", mailErr);
         });
 
-        res.json({ message: 'A temporary password has been sent to your email.' });
+        res.json({
+            message: 'A temporary password has been sent to your email.',
+            allowOtpInResponse: process.env.ALLOW_OTP_IN_RESPONSE === 'true' ? tempPassword : undefined
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 const authMiddleware = require('../middleware/auth');
+
+// Change Password Route
+router.post('/change-password', authMiddleware, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user.id);
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(400).json({ error: 'Incorrect recovery password' });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 8);
+        user.password = hashedPassword;
+        user.needsPasswordChange = false;
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 router.get('/me', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);

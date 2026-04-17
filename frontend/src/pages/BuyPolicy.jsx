@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import API_URL from '../config';
 import './BuyPolicy.css';
 import './Claims.css';
@@ -30,10 +31,10 @@ const BuyPolicy = () => {
             await axios.post(`${API_URL}/policy/buy`, { paymentMethod }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert(`Policy Purchased Successfully! Paid via ${paymentMethod === 'wallet' ? 'wallet' : 'Razorpay test mode'}.`);
+            toast.success(`Policy Purchased Successfully! Paid via ${paymentMethod === 'wallet' ? 'wallet' : 'Razorpay test mode'}.`);
             navigate('/dashboard');
         } catch (err) {
-            alert(err.response?.data?.error || 'Purchase failed');
+            toast.error(err.response?.data?.error || 'Purchase failed');
         }
     };
 

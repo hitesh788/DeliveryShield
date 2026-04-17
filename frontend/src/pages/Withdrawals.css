@@ -1,0 +1,147 @@
+.withdrawals-header {
+    gap: 18px;
+}
+
+.withdrawals-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.withdrawals-filter {
+    width: 260px;
+    margin: 0;
+    text-align: left;
+}
+
+.withdrawals-download-btn {
+    min-width: 220px;
+    box-shadow: 0 16px 30px rgba(30, 58, 138, 0.18);
+}
+
+.withdrawals-download-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    filter: none;
+    box-shadow: none;
+}
+
+.withdrawals-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.withdrawals-summary-card {
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 36%),
+        linear-gradient(145deg, #ffffff, #f8fafc);
+    border: 1px solid #dbeafe;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.06);
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.withdrawals-summary-card p {
+    color: #64748b;
+    font-size: 0.86rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.withdrawals-summary-card h3 {
+    color: #0f172a;
+    font-size: 1.45rem;
+    line-height: 1.1;
+    margin-bottom: 6px;
+}
+
+.withdrawals-summary-card span {
+    color: #475569;
+    font-size: 0.92rem;
+}
+
+.withdrawals-summary-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.withdrawals-summary-icon.payouts {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+}
+
+.withdrawals-summary-icon.credits {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.withdrawals-summary-icon.debits {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.withdrawals-summary-icon.balance {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+}
+
+.withdrawals-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.withdrawals-card-header h3 {
+    color: #0f172a;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.withdrawals-card-header p {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.withdrawals-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+@media (max-width: 900px) {
+    .withdrawals-header,
+    .withdrawals-card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .withdrawals-actions {
+        width: 100%;
+    }
+
+    .withdrawals-filter,
+    .withdrawals-download-btn {
+        width: 100%;
+    }
+}

@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
     currentPlan: { type: String, enum: ['BASIC PLAN', 'BETA PLAN', 'PRO LEVEL', 'ELITE CORP'], default: 'BASIC PLAN' },
     upiId: { type: String, default: '' },
     autoRenew: { type: Boolean, default: false },
-    walletBalance: { type: Number, default: 0 }
+    walletBalance: { type: Number, default: 0 },
+    needsPasswordChange: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

@@ -5,6 +5,7 @@ import { ShieldAlert, CloudRain, ThermometerSun, Wind, Banknote, Info, RefreshCw
 import { toast } from 'react-toastify';
 import API_URL from '../config';
 import './Claims.css';
+import './Dashboard.css';
 const PLAN_PRICES = {
     'BETA PLAN': 45,
     'PRO LEVEL': 95,
@@ -365,17 +366,70 @@ const Dashboard = () => {
 
             {showPolicyModal && policy && (
                 <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '600px', textAlign: 'left' }}>
-                        <h3 className="modal-title">Active Policy Details</h3>
-                        <p><strong>Plan:</strong> {policy.planName || currentPlan}</p>
-                        <p><strong>Start:</strong> {new Date(policy.startDate).toLocaleDateString()}</p>
-                        <p><strong>End:</strong> {new Date(policy.endDate).toLocaleDateString()}</p>
-                        <p><strong>Weekly premium:</strong> ₹{policy.weeklyPremium}</p>
-                        <p><strong>Income covered:</strong> ₹{policy.incomeCovered}</p>
-                        <p><strong>Risk factor:</strong> {policy.riskFactor}x</p>
-                        <p><strong>Auto-renew:</strong> {policy.autoRenew ? 'Enabled' : 'Disabled'}</p>
-                        <p><strong>Covered disruptions:</strong> {(policy.coveredDisruptions || []).join(', ') || 'Standard coverage'}</p>
-                        <button className="btn btn-logout" style={{ marginTop: '20px' }} onClick={() => setShowPolicyModal(false)}>Close</button>
+                    <div className="modal-content policy-modal" style={{ maxWidth: '800px', textAlign: 'left', padding: '30px' }}>
+                        <h3 className="modal-title" style={{ color: '#fff', marginBottom: '25px', fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <ShieldAlert size={28} color="#60a5fa" /> Active Policy Details
+                        </h3>
+                        <div className="policy-modal-hero">
+                            <div>
+                                <p className="policy-modal-eyebrow">Current Protection Level</p>
+                                <h4>{policy.planName || currentPlan}</h4>
+                                <span>
+                                    Coverage Window: {new Date(policy.startDate).toLocaleDateString('en-IN')} to {new Date(policy.endDate).toLocaleDateString('en-IN')}
+                                </span>
+                            </div>
+                            <div className={`policy-status-chip ${policy.autoRenew ? 'enabled' : 'disabled'}`}>
+                                Auto-renew {policy.autoRenew ? 'Enabled' : 'Disabled'}
+                            </div>
+                        </div>
+
+                        <div className="policy-details-grid">
+                            <div className="policy-detail-card accent-blue">
+                                <span>Start Date</span>
+                                <strong>{new Date(policy.startDate).toLocaleDateString('en-IN')}</strong>
+                            </div>
+                            <div className="policy-detail-card accent-violet">
+                                <span>End Date</span>
+                                <strong>{new Date(policy.endDate).toLocaleDateString('en-IN')}</strong>
+                            </div>
+                            <div className="policy-detail-card accent-green">
+                                <span>Weekly Premium</span>
+                                <strong>₹{policy.weeklyPremium}</strong>
+                            </div>
+                            <div className="policy-detail-card accent-gold">
+                                <span>Income Covered</span>
+                                <strong>₹{policy.incomeCovered}</strong>
+                            </div>
+                            <div className="policy-detail-card accent-slate">
+                                <span>Risk Factor</span>
+                                <strong>{policy.riskFactor}x</strong>
+                            </div>
+                            <div className="policy-detail-card accent-emerald">
+                                <span>Plan Name</span>
+                                <strong>{policy.planName || currentPlan}</strong>
+                            </div>
+                        </div>
+
+                        <div className="policy-disruptions-panel">
+                            <div className="policy-disruptions-header">
+                                <span>Covered Disruptions</span>
+                                <strong>{(policy.coveredDisruptions || []).length || 1} Protections Active</strong>
+                            </div>
+                            <div className="policy-disruptions-list">
+                                {((policy.coveredDisruptions && policy.coveredDisruptions.length > 0)
+                                    ? policy.coveredDisruptions
+                                    : ['Standard Coverage']
+                                ).map((item) => (
+                                    <span key={item} className="policy-disruption-badge">
+                                        {item === 'Heavy Rain' && <CloudRain size={16} color="#60a5fa" />}
+                                        {item === 'Extreme Heat' && <ThermometerSun size={16} color="#fca5a5" />}
+                                        {item === 'Pollution' && <Wind size={16} color="#cbd5e1" />}
+                                        {item}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                        <button className="btn btn-outline" style={{ marginTop: '25px', width: '100%', borderColor: 'rgba(255,255,255,0.2)', color: 'white', background: 'rgba(255,255,255,0.05)', fontSize: '1rem', padding: '12px' }} onClick={() => setShowPolicyModal(false)}>Close Overview</button>
                     </div>
                 </div>
             )}

@@ -1,0 +1,213 @@
+.forgot-page {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    justify-content: center;
+    background-color: #f7f9fa;
+    /* slightly off-white for the background outside the panel */
+}
+
+.forgot-split {
+    width: 100%;
+    /* remove max-width limit or make it max-width like 1200px */
+    max-width: 1200px;
+    height: 100%;
+    min-height: 700px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #FFFFFF;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.forgot-form-panel {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #FFFFFF;
+}
+
+.forgot-logo {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #111827;
+}
+
+.logo-sparkles {
+    font-size: 14px;
+}
+
+.forgot-form-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 360px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.forgot-icon-container {
+    width: 48px;
+    height: 48px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111827;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.forgot-form-center h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.forgot-subtitle {
+    color: #6B7280;
+    font-size: 0.95rem;
+    margin-bottom: 32px;
+}
+
+.forgot-form-center form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.form-group-forgot {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-forgot label {
+    display: none;
+    /* using placeholder instead */
+}
+
+.form-group-forgot input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #D1D5DB;
+    padding: 12px 0;
+    font-size: 1rem;
+    color: #111827;
+    background: transparent;
+    transition: border-color 0.2s ease;
+}
+
+.form-group-forgot input::placeholder {
+    color: #9CA3AF;
+}
+
+.form-group-forgot input:focus {
+    outline: none;
+    border-bottom: 1px solid #111827;
+}
+
+.btn-dark {
+    background-color: #111827;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.btn-dark:hover {
+    background-color: #1F2937;
+}
+
+.back-to-login {
+    margin-top: 32px;
+    text-align: center;
+}
+
+.back-to-login a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #4B5563;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.back-to-login a:hover {
+    color: #111827;
+}
+
+.forgot-visual-panel {
+    position: relative;
+    background:
+        linear-gradient(135deg, rgba(18, 52, 59, 0.92), rgba(31, 154, 138, 0.88)),
+        url('https://images.unsplash.com/photo-1526367790999-0150786686a2?auto=format&fit=crop&w=1000&q=80');
+    background-size: cover;
+    background-position: center;
+    border-radius: 24px;
+    margin: 12px;
+}
+
+.visual-gradient-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 40%, rgba(0, 0, 0, 0) 100%);
+    border-radius: 0 0 24px 24px;
+}
+
+.forgot-visual-text {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 48px;
+}
+
+.forgot-visual-text h3 {
+    color: #ffffff;
+    font-size: 1.5rem;
+    line-height: 1.4;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Responsive constraints */
+@media (max-width: 860px) {
+    .forgot-split {
+        grid-template-columns: 1fr;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .forgot-visual-panel {
+        display: none;
+        /* Often hide the visual panel on mobile for cleaner auth flow */
+    }
+
+    .forgot-logo {
+        position: static;
+        margin-bottom: 40px;
+    }
+}
