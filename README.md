@@ -1,4 +1,4 @@
-# 🚀 DeliveryShield – AI-Powered Parametric Insurance Platform
+<img width="1831" height="857" alt="image" src="https://github.com/user-attachments/assets/aa728dc7-1fdd-43d9-b305-2db42a8c4a7a" /># 🚀 DeliveryShield – AI-Powered Parametric Insurance Platform
 
 ## 📌 Overview
 
@@ -21,6 +21,8 @@ Gig workers often lose **20–30% of their income** due to:
 
 Currently, there is **no reliable income protection system**, forcing workers to bear financial losses alone.
 
+---
+Live Demo: https://deliveryshield.vercel.app/ 
 ---
 
 ## 💡 Our Solution
@@ -263,9 +265,14 @@ OPENWEATHER_API_KEY=your_api_key
 (Add before submission)
 
 * Web Dashboard
+<img width="1831" height="857" alt="image" src="https://github.com/user-attachments/assets/9d421c4f-ed61-41ca-ba85-9fcdf2470eb1" />
+
 * Login/Register UI
+<img width="1808" height="826" alt="image" src="https://github.com/user-attachments/assets/b9121ea0-9496-49e3-81f2-1fe943964bc5" />
+
 * Mobile App Screens
-* Alerts & Notifications
+<img width="266" height="572" alt="image" src="https://github.com/user-attachments/assets/71a5ac23-4a0e-45fe-a2dd-55603aa20ba6" />
+
 
 ---
 
