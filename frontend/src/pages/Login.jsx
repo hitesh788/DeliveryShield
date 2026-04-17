@@ -37,6 +37,20 @@ const Login = () => {
         }
     };
 
+    const handleForgotPassword = async () => {
+        if (!loginId || !loginId.includes('@')) {
+            toast.warn('Please enter your registered email address in the Phone/Email field, and click Forgot Password again.', { autoClose: 6000 });
+            return;
+        }
+
+        try {
+            const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: loginId });
+            toast.success(res.data.message || 'A temporary password has been sent to your email.');
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Unable to reset password. Check if your email is registered.');
+        }
+    };
+
     return (
         <div className="auth-container auth-page">
             <div className="auth-split">
@@ -48,9 +62,17 @@ const Login = () => {
                             <label>Phone or Email</label>
                             <input type="text" value={loginId} onChange={(e) => setLoginId(e.target.value)} required />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: '10px' }}>
                             <label>Password</label>
                             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        </div>
+                        <div style={{ textAlign: 'right', marginBottom: '15px' }}>
+                            <span
+                                onClick={handleForgotPassword}
+                                style={{ color: '#3B82F6', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}
+                            >
+                                Forgot Password?
+                            </span>
                         </div>
                         <button type="submit" className="btn btn-primary">Login</button>
                     </form>

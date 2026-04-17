@@ -50,7 +50,7 @@ const RegisterScreen = ({ navigation }) => {
 
                 <View style={styles.formGroup}>
                     <Text style={styles.label}>Full Name</Text>
-                    <TextInput style={styles.input} value={form.name} onChangeText={t => setForm({ ...form, name: t })} placeholder="John Doe" />
+                    <TextInput style={styles.input} value={form.name} onChangeText={t => setForm({ ...form, name: t })} placeholder="Name" />
                 </View>
 
                 <View style={styles.row}>

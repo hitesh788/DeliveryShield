@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { getVaultModel } = require('../utils/vault');
-const { sendOtpEmail } = require('../utils/email');
+const { sendOtpEmail, sendForgotPasswordEmail } = require('../utils/email');
 const router = express.Router();
 const publicUser = (user) => ({
     id: user._id,
@@ -227,6 +227,35 @@ router.post('/resend-otp', async (req, res) => {
             message: 'A new OTP has been sent to your email.',
             allowOtpInResponse: process.env.ALLOW_OTP_IN_RESPONSE === 'true' ? otp : undefined
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Forgot Password Route
+router.post('/forgot-password', async (req, res) => {
+    try {
+        let { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        email = email.trim().toLowerCase();
+        const user = await User.findOne({ email });
+
+        if (!user) return res.status(404).json({ error: 'No account found with this email' });
+
+        // Generate temporary password
+        const tempPassword = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
+        const hashedPassword = await bcrypt.hash(tempPassword, 8);
+
+        user.password = hashedPassword;
+        await user.save();
+
+        // Send email
+        sendForgotPasswordEmail(user.email, tempPassword, user.name).catch(mailErr => {
+            console.error("Background Password Mail Error:", mailErr);
+        });
+
+        res.json({ message: 'A temporary password has been sent to your email.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -290,4 +290,47 @@ const sendOtpEmail = async (to, otp, name = 'User') => {
     }
 };
 
-module.exports = { sendOtpEmail };
+const sendForgotPasswordEmail = async (to, newPassword, name = 'User') => {
+    const config = readEmailConfig();
+    const subject = 'DeliveryShield Password Recovery';
+    const text = `Your temporary password is: ${newPassword}. Please login and change it immediately.`;
+    const html = `
+    <div style="font-family:'Segoe UI',Arial,sans-serif;background:#f4f6f8;padding:30px 0;">
+        <div style="max-width:500px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.08);">
+            <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);padding:25px;text-align:center;color:#fff;">
+                <h1 style="margin:0;font-size:22px;">🚀 DeliveryShield</h1>
+            </div>
+            <div style="padding:35px 30px;text-align:center;">
+                <h2 style="margin-bottom:12px;color:#1f2937;">Password Recovery</h2>
+                <p style="color:#4b5563;">Hello <b>${escapeHtml(name)}</b>,</p>
+                <p style="color:#6b7280;margin-bottom:20px;">Use the temporary password below to access your account.</p>
+                <div style="margin:20px auto;padding:16px 0;width:220px;background:#eef2ff;border-radius:10px;border:1px solid #c7d2fe;font-size:24px;font-weight:700;color:#2563eb;">
+                    ${escapeHtml(newPassword)}
+                </div>
+                <p style="color:#9ca3af;font-size:12px;margin-top:10px;">Please login and change your password immediately.</p>
+            </div>
+        </div>
+    </div>`;
+
+    console.log(`📧 Attempting to send Password Recovery to ${to}...`);
+
+    try {
+        if (config.emailProvider === 'resend') {
+            return await sendWithResend({ to, from: config.emailFrom, subject, text, html, config });
+        }
+        const transporter = getTransporter();
+        if (!transporter) {
+            if (config.emailProvider === 'resend') return true;
+            throw new Error('No email transporter available.');
+        }
+        const mailOptions = { from: config.emailFrom, to, subject, text, html };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('✅ Password email sent:', info.response);
+        return true;
+    } catch (error) {
+        console.error('❌ Email sending failed:', error.message || error);
+        throw error;
+    }
+};
+
+module.exports = { sendOtpEmail, sendForgotPasswordEmail };

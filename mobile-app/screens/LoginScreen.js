@@ -55,6 +55,23 @@ const LoginScreen = ({ navigation }) => {
         }
     };
 
+    const handleForgotPassword = async () => {
+        const identifier = loginId.trim();
+        if (!identifier || !identifier.includes('@')) {
+            return Alert.alert('Forgot Password', 'Please enter your registered email address in the Email field above, then tap "Forgot Password?" again.');
+        }
+
+        setLoading(true);
+        try {
+            const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: identifier });
+            Alert.alert('Password Recovery', res.data.message || 'A temporary password has been sent to your email.');
+        } catch (err) {
+            Alert.alert('Recovery Failed', err.response?.data?.error || 'Unable to reset password. Please check if your email is correct.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.logoContainer}>
@@ -79,6 +96,11 @@ const LoginScreen = ({ navigation }) => {
                     onChangeText={setPassword}
                     secureTextEntry
                 />
+
+                <TouchableOpacity onPress={handleForgotPassword} style={{ alignSelf: 'flex-end', marginBottom: 20, marginTop: -5 }}>
+                    <Text style={{ color: '#3B82F6', fontWeight: '700', fontSize: 13 }}>Forgot Password?</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.btnPrimary} onPress={handleLogin} disabled={loading}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>ENTER DASHBOARD</Text>}
                 </TouchableOpacity>
