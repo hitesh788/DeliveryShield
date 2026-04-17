@@ -9,7 +9,6 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [usersData, setUsersData] = useState({ users: [], removedUsers: [] });
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = active => useState('overview'); // wait, wrong syntax. Correcting below.
     const [tab, setTab] = useState('overview');
     const [selectedUser, setSelectedUser] = useState(null);
     const [removalReason, setRemovalReason] = useState('');
@@ -66,8 +65,12 @@ const AdminDashboard = () => {
         </div>
     );
 
-    const filteredUsers = filterData(usersData.users);
-    const filteredRemoved = filterData(usersData.removedUsers);
+    // Fallback adapter for older backend responses where it just returned an Array
+    const safeUsers = Array.isArray(usersData) ? usersData.filter(u => !u.isRemoved) : (usersData?.users || []);
+    const safeRemoved = Array.isArray(usersData) ? usersData.filter(u => u.isRemoved) : (usersData?.removedUsers || []);
+
+    const filteredUsers = filterData(safeUsers);
+    const filteredRemoved = filterData(safeRemoved);
 
     return (
         <div style={{ background: '#0F172A', minHeight: '100vh', color: '#F8FAFC', paddingBottom: '40px' }}>
