@@ -23,6 +23,16 @@ Currently, there is **no reliable income protection system**, forcing workers to
 
 ---
 Live Demo: https://deliveryshield.vercel.app/ 
+Mobile Application: Here is the updated application!!
+For download new updated application from new link
+
+DeliveryShield Successfully Deployed!
+DeliveryShield is now live on both Web and Mobile App! 
+
+🌐 Website: https://deliveryshield.vercel.app/login
+📱 Mobile App: https://bit.ly/3QeeTla
+
+You can now register, log in, and start using the platform seamlessly across devices. The system is fully functional and ready to help users experience secure and reliable service.
 ---
 
 ## 💡 Our Solution
